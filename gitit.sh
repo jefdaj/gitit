@@ -11,7 +11,7 @@
 
 ROOTDIR="$(cd `dirname "$0"` && pwd)"
 BINDIR="$ROOTDIR/.cabal-sandbox/bin"
-TESTWIKI="$ROOTDIR/testwiki"
+WIKIDIR="$ROOTDIR/testwiki"
 
 # this is needeed because if your distro doesn't give /tmp execute permissions
 # you have to compile somewhere else, or there will be all sorts of weird errors
@@ -28,14 +28,14 @@ CABAL_SANDBOX_PKGPATH="$(cabal sandbox hc-pkg list | grep \: | tac | sed 's/://'
 
 prepare_repo() {
   cd "$ROOTDIR"
-  cabal update
+  #cabal update
   cabal sandbox init
   [[ -d "$CABAL_SANDBOX_TMPDIR" ]] || mkdir "$CABAL_SANDBOX_TMPDIR"
 }
 
 build_gitit() {
   cd "$ROOTDIR"
-  cabal install
+  TMPDIR="$CABAL_SANDBOX_TMPDIR" cabal install
 }
 
 test_gitit() {
@@ -46,8 +46,7 @@ test_gitit() {
   CABAL_SANDBOX_CONFIG="$ROOTDIR/cabal.sandbox.config" \
     GHC_PACKAGE_PATH="$CABAL_SANDBOX_PKGPATH" \
     PATH="$BINDIR":$PATH \
-    TMPDIR="$CABAL_SANDBOX_TMPDIR" \
-    gitit --config-file "$TESTWIKI/testwiki.conf"
+    gitit --config-file "$WIKIDIR/testwiki.conf"
 }
 
 
