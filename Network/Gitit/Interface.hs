@@ -125,6 +125,12 @@ module Network.Gitit.Interface ( Plugin(..)
                                , withTempDir
                                , module Text.Pandoc.Definition
                                , module Text.Pandoc.Generic
+                               
+                               -- from Externals.hs
+                               , eval
+                               , wrap
+                               , flatten
+                               , mkPlugin
                                )
 where
 import Text.Pandoc.Definition
@@ -138,6 +144,7 @@ import Control.Monad.Reader (ask)
 import Control.Monad.Trans (liftIO)
 import Control.Monad (liftM)
 import Data.FileStore (FileStore)
+import Network.Gitit.Plugins
 
 -- | Returns the current wiki configuration.
 askConfig :: PluginM Config

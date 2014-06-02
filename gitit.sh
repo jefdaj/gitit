@@ -39,10 +39,10 @@ build_gitit() {
 }
 
 test_gitit() {
-  cd "$ROOTDIR/testwiki/wikidata"
+  cd "$WIKIDIR/wikidata"
   [[ -d .git ]] || git init
   git add . && git commit -m 'make sure test pages will show up'
-  cd "$ROOTDIR"
+  cd "$WIKIDIR"
   CABAL_SANDBOX_CONFIG="$ROOTDIR/cabal.sandbox.config" \
     GHC_PACKAGE_PATH="$CABAL_SANDBOX_PKGPATH" \
     PATH="$BINDIR":$PATH \
