@@ -1,0 +1,14 @@
+# editor temp files
+*.sw*
+*.~*
+
+# cabal temp files
+.cabal-sandbox
+build
+cabal.sandbox.config
+dist
+
+# compiled files
+*.hi
+*.o
+*.pyc
