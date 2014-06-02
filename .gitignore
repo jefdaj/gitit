@@ -12,3 +12,7 @@ dist
 *.hi
 *.o
 *.pyc
+
+# test wiki
+testwiki/*.log
+testwiki/wikidata/.git

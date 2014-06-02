@@ -1,0 +1,60 @@
+---
+format: Markdown
+title: testwiki
+...
+
+Here are some code blocks.
+It's easiest to see what's going on if you click `edit`
+and compare source code to the output of `Preview`.
+
+DepGraph.hs
+-----------
+
+~~~ { .depgraph mode="pages" width="300" }
+graphtest_1
+graphtest_2
+~~~
+
+
+~~~ { .depgraph mode="globs" width="300" }
+graph2/*
+~~~
+
+GlobList.hs
+-----------
+
+This should produce a list of page links:
+
+~~~{ .globlist }
+*graph*
+/testdir/*
+*
+~~~
+
+External.hs
+-----------
+
+~~~ { .external bin="/bin/sh" fmt="plain" }
+echo "hello from $0"
+~~~
+
+~~~ { .external bin="/usr/bin/python" fmt="para" }
+import sys
+print "hello from python", sys.version
+~~~
+
+~~~ { .external bin="/bin/false" fmt="html"}
+this generates an error
+~~~
+
+Csv.hs
+------
+
+~~~ { .csv }
+id,name,email
+1,Jeff Johnson, jefdaj@gmail.com
+~~~
+
+~~~ { .csv file="/tmp/test.csv" }
+this is a csv file loaded from disk
+~~~
