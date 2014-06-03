@@ -5,60 +5,101 @@
 # what each of these commands does!
 
 
-############
-# variables
-############
+###########
+# settings
+###########
 
 ROOTDIR="$(cd `dirname "$0"` && pwd)"
 BINDIR="$ROOTDIR/.cabal-sandbox/bin"
-WIKIDIR="$ROOTDIR/testwiki"
 
-# this is needeed because if your distro doesn't give /tmp execute permissions
-# you have to compile somewhere else, or there will be all sorts of weird errors
-CABAL_SANDBOX_TMPDIR="$ROOTDIR/.cabal-sandbox/tmp"
+# this is needeed because if your distro doesn't give /tmp
+# execute permissions you have to compile somewhere else,
+# or there will be all sorts of weird errors
+CABALTMP="$ROOTDIR/.cabal-sandbox/tmp"
 
-# and this is needed because ghc doesn't understand cabal sandboxes yet
-# see http://mappend.net/posts/ghc-and-cabal-sandbox-playing-ni
-CABAL_SANDBOX_PKGPATH="$(cabal sandbox hc-pkg list | grep \: | tac | sed 's/://' | paste -d: - -)"
+WIKIDIR="$CABALTMP/testwiki"
 
 
-############
-# functions
-############
+###################
+# support routines
+###################
 
-prepare_repo() {
+prep_repo() {
   cd "$ROOTDIR"
   #cabal update
   cabal sandbox init
-  [[ -d "$CABAL_SANDBOX_TMPDIR" ]] || mkdir "$CABAL_SANDBOX_TMPDIR"
+  [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
-build_gitit() {
-  cd "$ROOTDIR"
-  TMPDIR="$CABAL_SANDBOX_TMPDIR" cabal install
-}
-
-test_gitit() {
-  cd "$WIKIDIR/wikidata"
+prep_wiki() {
+  prep_repo
+  cp -r "$ROOTDIR/testwiki" "$CABALTMP"
+  cd "$CABALTMP/testwiki/wikidata"
   [[ -d .git ]] || git init
   git add . && git commit -m 'make sure test pages will show up'
-  cd "$WIKIDIR"
-  CABAL_SANDBOX_CONFIG="$ROOTDIR/cabal.sandbox.config" \
-    GHC_PACKAGE_PATH="$CABAL_SANDBOX_PKGPATH" \
-    PATH="$BINDIR":$PATH \
-    gitit --config-file "$WIKIDIR/testwiki.conf"
+}
+
+cabal_flags() {
+  # and this is needed because ghc doesn't understand cabal sandboxes yet
+  # see http://mappend.net/posts/ghc-and-cabal-sandbox-playing-ni
+  prep_repo > /dev/null
+  cabal sandbox hc-pkg list | grep \: | tac | sed 's/://' |
+    while read db; do
+      echo -n "--package-db='$db' "
+    done
+}
+
+cabal_vars() {
+  vars="CABAL_SANDBOX_CONFIG='$ROOTDIR/cabal.sandbox.config'"
+  vars="$vars PATH='$BINDIR:$PATH'"
+  vars="$vars TMPDIR='$CABALTMP'"
+  echo -n "$vars"
+}
+
+cabal_sandbox() {
+  # run cabal with environment variables set correctly
+  prep_repo
+  $(cabal_vars) cabal $@ $(cabal_flags)
 }
 
 
-#######
-# main
-#######
+################
+# main routines
+################
 
-for arg in "$@"; do
-  case "$arg" in
-    'prep' ) prepare_repo ;;
-    'build') build_gitit  ;;
-    'test' ) test_gitit   ;;
-    *) echo "unexpected arg: '$arg'" && exit 1 ;;
-  esac
-done
+gitit_build() {
+  # build gitit, but don't run it yet
+  cd "$ROOTDIR"
+  cabal_sandbox install $@
+}
+
+gitit_rebuild() {
+  # delete the sandbox and run build again
+  cd "$ROOTDIR"
+  rm -rf .cabal-sandbox cabal.sandbox.config
+  gitit_build $@
+}
+
+gitit_exec() {
+  # run the test wiki using cabal exec
+  gitit_build
+  prep_wiki
+  cmd1="'cd $CABALTMP/testwiki && gitit --config-file testwiki.conf'"
+  cmd2="$(cabal_vars) cabal exec bash"
+  echo "$cmd1 $@" | $cmd2
+}
+
+gitit_repl() {
+  # load gitit in a cabal repl
+  gitit_build
+  cabal repl $@
+}
+
+dispatch="$1"; shift
+case "$dispatch" in
+  'build'  ) gitit_build   $@ ;;
+  'rebuild') gitit_rebuild $@ ;;
+  'exec'   ) gitit_exec    $@ ;;
+  'repl'   ) gitit_repl    $@ ;;
+  #*) echo "$0 doesn't handle '$arg'" && exit 1 ;;
+esac
