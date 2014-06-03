@@ -100,5 +100,5 @@ case "$dispatch" in
   'rebuild') gitit_rebuild $@ ;;
   'exec'   ) gitit_exec    $@ ;;
   'repl'   ) gitit_repl    $@ ;;
-  #*) echo "$0 doesn't handle '$arg'" && exit 1 ;;
+  *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac

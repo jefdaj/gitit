@@ -1,14 +1,15 @@
-module Network.Gitit.Plugin.External (plugin, mkPlugin, Plugin, eval, wrap, flatten, argList)
-  where
+module Network.Gitit.Plugin.External
+  ( plugin
+  , mkPlugin
+  , Plugin
+  , allArgs
+  ) where
 
 -- TODO get pluginDir and append to the string mkPlugin takes
--- TODO fix how it's not passing args at all!
 
 import Control.Monad.IO.Class
 import Data.Maybe
 import Network.Gitit.Interface
-import System.FilePath
-import Text.Pandoc.Definition
 import System.Exit
 import System.Process
 
@@ -43,33 +44,46 @@ wrap "para" txt = Para  [Str txt]
 wrap _      txt = Plain [Str txt]
 
 
-flatten :: [(String, String)] -> [String]
-flatten = concat . map flagify
+mkArgs :: [String] -> [(String, String)] -> [String]
+mkArgs ok usr = concat $ map flagify $ screen usr
   where
+    screen = filter (\(k,_) -> elem k ok)
     flagify (k, v) = ["--" ++ k, v]
 
 
 -- asks for the plugin data available from gitit and
 -- formats it as command line args for external scripts
-argList :: PluginM [String]
-argList = do
+-- also takes a predicate for filtering which args to use
+argList :: [String] -> [(String, String)] -> PluginM [String]
+argList ok usr = do
   c <- askConfig
   m <- askMeta
   r <- askRequest
-  return $ concat [flatten m, cfgFlags c, reqFlags r]
+  return $ mkArgs ok $ concat [usr, m, cfgFlags c, reqFlags r]
   where
-    reqFlags r = flatten [("uri", rqUri r)]
-    cfgFlags c = flatten
+    reqFlags r = [("uri", rqUri r)]
+    cfgFlags c =
       [ ("repository-path", repositoryPath c)
       , ("templates-dir"  , templatesDir   c)
       , ("static-dir"     , staticDir      c)
       , ("cache-dir"      , cacheDir       c)
       ]
 
+allArgs :: [String]
+allArgs =
+  [ "repository-path"
+  , "templates-dir"
+  , "static-dir"
+  , "cache-dir"
+  , "uri"
+  ]
+
+-- TODO add ask to the documentation
+-- TODO remove other "external" plugin?
 
 {- This renders generic "external" codeblocks using whatever
  - command you want. The 'bin' attribute is required,
- - but 'fmt' defaults to "plain" (plain text).
+ - but 'fmt' defaults to "plain" (plain text) and 'ask' to [].
  -
  - Other fmt options are:
  -   "para" for plain text as a paragraph
@@ -77,11 +91,21 @@ argList = do
  -   "list" for a bullet list
  -   "html" for raw html
  -
+ - 'ask' should be a whitespace-separated list of args
+ - you'd like this plugin to pass on to your script.
+ - The options are:
+ -   repository-path
+ -   templates-dir
+ -   static-dir
+ -   cache-dir
+ -   uri
+ -
  - Here's how you might use it:
  -
- - > ~~~ { .external bin="/path/to/my/binary" fmt="html" }
- - > this text is sent through /path/to/my/binary
- - > and then wrapped in RawBlock "html"
+ - > ~~~ { .external bin="/path/to/my/binary" fmt="html" ask="uri cache-dir" }
+ - > gitit will run '/path/to/my/binary --uri <page uri> --cache-dir <cache dir>'
+ - > this text will be sent as stdin,
+ - > and then stdout will be wrapped in RawBlock "html"
  - > ~~~
  -}
 plugin :: Plugin
@@ -89,10 +113,11 @@ plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem "external" cs = do
-      args <- argList
       let bin = fromMaybe "" $ lookup "bin" as
           fmt = fromMaybe "" $ lookup "fmt" as
-      out <- liftIO $ eval bin (flatten as ++ args) txt
+          nfo = fromMaybe "" $ lookup "nfo" as
+      args <- argList (words nfo) as
+      out  <- liftIO $ eval bin args txt
       return $ wrap fmt out
     tfm x = return x
 
@@ -107,21 +132,22 @@ plugin = mkPageTransformM tfm
  -
  - > module CustomPlugin (plugin) where
  - > import Gitit.Network.Plugin.External (mkPlugin)
- - > plugin = mkPlugin "custom" "html" "/path/to/my/binary"
+ - > plugin = mkPlugin "custom" "html" "/path/to/my/binary" ["uri"]
  -
  - And here's how you might use it:
  -
  - > ~~~ { .custom }
- - > text here will be piped through /path/to/my/binary
- - > and then wrapped in a RawBlock "html"
+ - > gitit will run '/path/to/my/binary --uri <page uri>'
+ - > this text will be sent as stdin
+ - > and then stdout will be wrapped in a RawBlock "html"
  - > ~~~
  -}
-mkPlugin :: String -> String -> FilePath -> Plugin
-mkPlugin cls fmt bin = mkPageTransformM tfm
+mkPlugin :: String -> String -> FilePath -> [String] -> Plugin
+mkPlugin cls fmt bin ask = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem cls cs = do
-      args <- argList
-      out <- liftIO $ eval bin (flatten as ++ args) txt
+      args <- argList ask as
+      out  <- liftIO $ eval bin args txt
       return $ wrap fmt out
     tfm x = return x
