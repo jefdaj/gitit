@@ -53,13 +53,13 @@ cabal_vars() {
   vars="CABAL_SANDBOX_CONFIG='$ROOTDIR/cabal.sandbox.config'"
   vars="$vars PATH='$BINDIR:$PATH'"
   vars="$vars TMPDIR='$CABALTMP'"
-  echo -n "$vars"
+  echo -n $vars
 }
 
 cabal_sandbox() {
   # run cabal with environment variables set correctly
   prep_repo
-  $(cabal_vars) cabal $@ $(cabal_flags)
+  eval "$(cabal_vars) cabal $@ $(cabal_flags)"
 }
 
 
@@ -84,9 +84,8 @@ gitit_exec() {
   # run the test wiki using cabal exec
   gitit_build
   prep_wiki
-  cmd1="'cd $CABALTMP/testwiki && gitit --config-file testwiki.conf'"
-  cmd2="$(cabal_vars) cabal exec bash"
-  echo "$cmd1 $@" | $cmd2
+  cmd="'cd '$CABALTMP/testwiki' && gitit --config-file testwiki.conf'"
+  eval "echo $cmd $@ | $(cabal_vars) cabal exec bash"
 }
 
 gitit_repl() {
