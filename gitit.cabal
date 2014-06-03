@@ -90,6 +90,12 @@ data-files:          data/static/css/screen.css, data/static/css/print.css,
                      plugins/ShowUser.hs,
                      plugins/Signature.hs,
                      plugins/Subst.hs,
+                     plugins/External.hs,
+                     plugins/Csv.hs,
+                     plugins/GlobList.hs,
+                     plugins/depgraph.py,
+                     plugins/globlist.py,
+                     plugins/util.py
                      CHANGES, README.markdown, YUI-LICENSE, BLUETRIP-LICENSE, TANGOICONS
 
 Source-repository head
@@ -114,7 +120,7 @@ Library
                      Network.Gitit.Plugins, Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed
   if flag(plugins)
-    exposed-modules: Network.Gitit.Interface
+    exposed-modules: Network.Gitit.Interface, Network.Gitit.Plugin.External
     build-depends:   ghc, ghc-paths
     cpp-options:     -D_PLUGINS
   build-depends:     base >= 3, pandoc >= 1.12.4 && < 1.13,
@@ -167,7 +173,8 @@ Executable           gitit
                      blaze-html >= 0.4 && < 0.8,
                      json >= 0.4 && < 0.8,
                      uri >= 0.1 && < 0.2,
-                     split
+                     split,
+                     transformers
   if impl(ghc >= 6.10)
     build-depends:   base >= 4, syb
   if flag(plugins)

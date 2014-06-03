@@ -125,12 +125,6 @@ module Network.Gitit.Interface ( Plugin(..)
                                , withTempDir
                                , module Text.Pandoc.Definition
                                , module Text.Pandoc.Generic
-                               
-                               -- from Externals.hs
-                               , eval
-                               , wrap
-                               , flatten
-                               , mkPlugin
                                )
 where
 import Text.Pandoc.Definition

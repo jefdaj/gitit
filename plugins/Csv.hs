@@ -1,5 +1,4 @@
-module Network.Gitit.Plugin.Csv (plugin)
-  where
+module Csv (plugin) where
 
 import Data.List.Split
 import Data.Maybe

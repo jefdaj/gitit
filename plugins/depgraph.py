@@ -125,7 +125,10 @@ def theme(args, graph):
 
 def svg_contents(args, graph):
     h = hash(graph.to_string())
-    p = os.path.join(args['cache_dir'], 'depgraph%s.svg' % h)
+    p = args['cache_dir']
+    if not os.path.exists(p):
+        os.mkdir(p)
+    p = os.path.join(p, 'depgraph%s.svg' % h)
     if not os.path.exists(p):
         graph.write_svg(p)
         fix_generated_svg(args, p)

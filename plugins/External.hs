@@ -1,9 +1,9 @@
-module External (plugin)
-  where
+module External (plugin) where
 
--- import Control.Monad.IO.Class
--- import Data.Maybe
+import Control.Monad.IO.Class
+import Data.Maybe
 import Network.Gitit.Interface
+import Network.Gitit.Plugin.External hiding (plugin)
 
 {- This renders generic "external" codeblocks using whatever
  - command you want. The 'bin' attribute is required,

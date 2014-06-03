@@ -3,3 +3,32 @@
 
 /* Put your custom style modifications here: */
 
+/* depgraph */
+/* is any of this really needed? */
+.svg-container { 
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* TODO set based on aspect ratio? */
+  vertical-align: middle; 
+  overflow: hidden; 
+}
+
+/* is any of this really needed? */
+.svg-content { 
+ display: inline-block;
+ position: absolute;
+ top: 0;
+ left: 0;
+}
+
+/* it works! at least when classes are changed from node --> oldnode, newnode */
+/* TODO apply polygon strokes in here rather than in dotgraph theme */
+
+text { fill: black; }
+
+.oldnode { fill: none; }
+.newnode { fill: none; }
+
+.oldnode:hover { fill: #eeeeee; }
+.newnode:hover { fill: #eeffee; }
