@@ -15,8 +15,9 @@ BINDIR="$ROOTDIR/.cabal-sandbox/bin"
 # this is needeed because if your distro doesn't give /tmp
 # execute permissions you have to compile somewhere else,
 # or there will be all sorts of weird errors
-CABALTMP="$ROOTDIR/.cabal-sandbox/tmp"
+CABALDIR="$ROOTDIR/.cabal-sandbox"
 
+CABALTMP="$CABALDIR/tmp"
 WIKIDIR="$CABALTMP/testwiki"
 
 
@@ -95,6 +96,10 @@ gitit_build() {
   cd "$ROOTDIR"
   prep_deps || exit 1
   cabal_sandbox install $@
+
+  # TODO there's got to be a better way right?
+  #      preferably a cabal option
+  chmod +x "$CABALDIR"/share/*-ghc-*/gitit*/plugins/*
 }
 
 gitit_rebuild() {
