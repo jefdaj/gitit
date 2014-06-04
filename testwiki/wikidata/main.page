@@ -55,6 +55,18 @@ id,name,email
 1,Jeff Johnson, jefdaj@gmail.com
 ~~~
 
-~~~ { .csv file="/tmp/test.csv" }
-this is a csv file loaded from disk
+~~~ { .csv file="test2.csv" }
+this is a csv file by path relative to the page
+~~~
+
+~~~ { .csv file="testdir/test3.csv" }
+this is another one loaded path relative to the page
+~~~
+
+~~~ { .csv file="/test2.csv" }
+this is a csv file by path relative to the repo
+~~~
+
+~~~ { .csv file="/testdir/test3.csv" }
+this is another one loaded path relative to the repo
 ~~~

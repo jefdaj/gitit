@@ -3,14 +3,17 @@ module Network.Gitit.Plugin.External
   , mkPlugin
   , Plugin
   , allArgs
+  , askFile
+  , link2path
   ) where
 
--- TODO get pluginDir and append to the string mkPlugin takes
-
 import Control.Monad.IO.Class
+import Data.List
+import Data.List.Split
 import Data.Maybe
 import Network.Gitit.Interface
 import System.Exit
+import System.FilePath
 import System.Process
 
 import Paths_gitit (getDataFileName)
@@ -154,3 +157,35 @@ mkPlugin cls fmt bin ask = mkPageTransformM tfm
         eval b args txt
       return $ wrap fmt out
     tfm x = return x
+
+-- TODO can you get the raw page path from a Page object somewhere?
+--      looks like it from the debug output...
+
+uri2path :: String -> FilePath
+uri2path uri
+  = concat $ intersperse [pathSeparator]
+  $ filter (/= "")                        -- remove blanks
+  $ filter (\s -> not $ isPrefixOf "_" s) -- remove _edit etc.
+  $ splitOn [pathSeparator] uri
+
+-- returns the path to the .page file associated with a request
+askFile :: PluginM FilePath
+askFile = do
+  cfg <- askConfig
+  req <- askRequest
+  let p1 = repositoryPath cfg
+      p2 = uri2path $ rqUri req
+      p  = joinPath [p1, p2]
+  return p
+
+-- takes an absolute or relative gitit link
+-- and makes it into a file path relative to the running program
+link2path :: String -> PluginM FilePath
+link2path lnk = do
+  cfg <- askConfig
+  pfp <- askFile
+  -- if it starts with "/", the link is relative to the repository
+  -- otherwise, it's relative to the requested page
+  case isPrefixOf "/" lnk of
+    True  -> return $ joinPath [repositoryPath cfg, dropWhile (== '/') lnk]
+    False -> return $ joinPath [takeDirectory pfp, lnk]
