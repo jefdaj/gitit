@@ -27,7 +27,7 @@ WIKIDIR="$CABALTMP/testwiki"
 
 check_deps() {
   # stop and warn about missing dependencies
-  deps=(bash ghc cabal python pip dot)
+  deps=(bash ghc cabal python pip dot pdflatex)
   for d in ${deps[@]}; do
     if [[ -z "$(which $d)" ]]; then
       read -p "WARNING! Couldn't find '$d'. Continue anyway? (y/n) " answer
@@ -83,7 +83,7 @@ cabal_vars() {
 cabal_sandbox() {
   # run cabal with environment variables set correctly
   prep_repo
-  eval "$(cabal_vars) cabal $@ $(cabal_flags)"
+  time eval "$(cabal_vars) cabal $@ $(cabal_flags)"
 }
 
 
@@ -95,7 +95,7 @@ gitit_build() {
   # build gitit, but don't run it yet
   cd "$ROOTDIR"
   prep_deps || exit 1
-  cabal_sandbox install $@
+  cabal_sandbox install $@ || return 1
 
   # TODO there's got to be a better way right?
   #      preferably a cabal option
@@ -106,12 +106,12 @@ gitit_rebuild() {
   # delete the sandbox and run build again
   cd "$ROOTDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
-  gitit_build $@
+  gitit_build $@ || return 1
 }
 
 gitit_exec() {
   # run the test wiki using cabal exec
-  gitit_build
+  gitit_build || return 1
   prep_wiki
   cmd="'cd '$CABALTMP/testwiki' && gitit --config-file testwiki.conf'"
   eval "echo $cmd $@ | $(cabal_vars) cabal exec bash"
@@ -119,7 +119,7 @@ gitit_exec() {
 
 gitit_repl() {
   # load gitit in a cabal repl
-  gitit_build
+  gitit_build || return 1
   cabal repl $@
 }
 
