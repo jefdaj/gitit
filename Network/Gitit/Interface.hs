@@ -138,7 +138,6 @@ import Control.Monad.Reader (ask)
 import Control.Monad.Trans (liftIO)
 import Control.Monad (liftM)
 import Data.FileStore (FileStore)
-import Network.Gitit.Plugins
 
 -- | Returns the current wiki configuration.
 askConfig :: PluginM Config
