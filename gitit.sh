@@ -26,7 +26,7 @@ WIKIDIR="$CABALTMP/testwiki"
 
 check_deps() {
   # stop and warn about missing dependencies
-  deps=(bash ghc cabal python pip dot)
+  deps=(bash ghc cabal python pip dot pdflatex)
   for d in ${deps[@]}; do
     if [[ -z "$(which $d)" ]]; then
       read -p "WARNING! Couldn't find '$d'. Continue anyway? (y/n) " answer
@@ -95,6 +95,11 @@ gitit_build() {
   cd "$ROOTDIR"
   prep_deps || exit 1
   cabal_sandbox install $@
+
+  # TODO there's got to be a better way right?
+  #      hopefully an option in the cabal file
+  #      or set it inside mkPlugin?
+  chmod +x .cabal-sandbox/share/*/gitit-*/plugins/*
 }
 
 gitit_rebuild() {

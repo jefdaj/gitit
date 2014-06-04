@@ -13,6 +13,7 @@ import Network.Gitit.Interface
 import System.Exit
 import System.Process
 
+import Paths_gitit (getDataFileName)
 
 {- Passes text to an external script as stdin
  - and returns with the script's stdout
@@ -148,6 +149,8 @@ mkPlugin cls fmt bin ask = mkPageTransformM tfm
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem cls cs = do
       args <- argList ask as
-      out  <- liftIO $ eval bin args txt
+      out  <- liftIO $ do
+        b <- getDataFileName bin
+        eval b args txt
       return $ wrap fmt out
     tfm x = return x
