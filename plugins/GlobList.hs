@@ -11,5 +11,5 @@ plugin :: Plugin
 plugin = mkPlugin
   "globlist"
   "html"
-  "/git/github/gitit/plugins/globlist.py"
+  "plugins/globlist.py"
   allArgs

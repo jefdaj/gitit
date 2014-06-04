@@ -34,6 +34,7 @@ prep_repo() {
 prep_wiki() {
   prep_repo
   cp -r "$ROOTDIR/testwiki" "$CABALTMP"
+  cp -r "$ROOTDIR/plugins"  "$CABALTMP/testwiki"
   cd "$CABALTMP/testwiki/wikidata"
   [[ -d .git ]] || git init
   git add . && git commit -m 'make sure test pages will show up'
