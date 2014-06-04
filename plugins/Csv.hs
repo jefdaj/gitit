@@ -1,9 +1,13 @@
 module Csv (plugin) where
 
+-- TODO make 'file' paths relative to repository-path when absolute
+-- TODO and relative to repository-path/cleaned-up-uri if relpaths
+
 import Data.List.Split
 import Data.Maybe
 import Network.Gitit.Interface
 import System.Directory
+import System.FilePath.Posix
 
 -- splits the raw csv into fields
 -- TODO use Data.CSV to replace this
@@ -36,14 +40,15 @@ caption as = map Str $ maybeToList $ lookup "caption" as
 
 -- gets block attributes and body text, and
 -- reads a file to replace the text if needed
-body :: [(String, FilePath)] -> String -> IO String
-body as txt = case lookup "file" as of
+body :: FilePath -> [(String, FilePath)] -> String -> IO String
+body repo as txt = case lookup "file" as of
   Nothing -> return txt
   Just f  -> do
-    e <- doesFileExist f
+    j <- joinPath [repo, f]
+    e <- doesFileExist j
     case e of
-      False -> return $ "file not found: " ++ f
-      True  -> readFile f
+      False -> return $ "file not found: " ++ j
+      True  -> readFile j
 
 plugin :: Plugin
 plugin = mkPageTransformM tfm
@@ -51,6 +56,7 @@ plugin = mkPageTransformM tfm
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
       cap <- return $ caption as
-      bod <- liftIO $ body as txt
+      cfg <- askConfig
+      bod <- liftIO $ body (repositoryPath cfg) as txt
       return $ table cap bod
     tfm x = return x
