@@ -24,6 +24,28 @@ WIKIDIR="$CABALTMP/testwiki"
 # support routines
 ###################
 
+check_deps() {
+  # stop and warn about missing dependencies
+  deps=(bash ghc cabal python pip dot)
+  for d in ${deps[@]}; do
+    if [[ -z "$(which $d)" ]]; then
+      read -p "WARNING! Couldn't find '$d'. Continue anyway? (y/n) " answer
+      case "$answer" in
+        y|Y) continue ;;
+        *  ) exit 1   ;;
+      esac
+    else
+      echo "found $d at $(which $d)"
+    fi
+  done
+}
+
+prep_deps() {
+  check_deps || exit 1
+  pydeps=(pillow pydot pystache)
+  pip install ${pydeps[@]} # sudo? --upgrade?
+}
+
 prep_repo() {
   cd "$ROOTDIR"
   #cabal update
@@ -71,6 +93,7 @@ cabal_sandbox() {
 gitit_build() {
   # build gitit, but don't run it yet
   cd "$ROOTDIR"
+  prep_deps || exit 1
   cabal_sandbox install $@
 }
 
