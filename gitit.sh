@@ -111,9 +111,11 @@ gitit_rebuild() {
 
 gitit_exec() {
   # run the test wiki using cabal exec
+  cmd='gitit --config-file jeffwiki.conf'
+  pkill -f "$cmd" # if there's an instance running, kill it first
   gitit_build || return 1
   prep_wiki
-  cmd="'cd '$CABALTMP/testwiki' && gitit --config-file testwiki.conf'"
+  cmd="'cd '$CABALTMP/testwiki' && $cmd'"
   eval "echo $cmd $@ | $(cabal_vars) cabal exec bash"
 }
 
