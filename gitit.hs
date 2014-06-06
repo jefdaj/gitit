@@ -82,8 +82,9 @@ main = do
   saveGlobalLogger $ setLevel level $ setHandlers [logFileHandler] serverLogger
   saveGlobalLogger $ setLevel level $ setHandlers [logFileHandler] gititLogger
 
-  -- setup the page repository, template, and static files, if they don't exist
+  -- setup the page repository, template, cache, and static files, if they don't exist
   createRepoIfMissing conf
+  createCacheIfMissing conf
   createStaticIfMissing conf
   createTemplateIfMissing conf
 
