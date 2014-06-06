@@ -2,6 +2,7 @@
 
 # TODO going to have to redo the hashed id stuff
 #      to have more than one graph per page...
+# TODO parse width and height from command line args
 
 # if you see "Couldn't import dot_parser..." in pages, try this:
 # http://stackoverflow.com/questions/15951748
@@ -10,6 +11,7 @@ import argparse
 import BeautifulSoup
 import os
 import pydot
+import re
 import subprocess
 import sys
 import urllib2
@@ -177,8 +179,11 @@ def fix_generated_svg(args, path):
         f.write(svg.toxml())
 
 def svg_container(args, svg):
-    'takes the raw svg and puts it into an svg-container div'
-    return '<div class="svg-container">%s</div>' % svg
+    'takes the raw svg and puts it into a resizable svg-container div'
+    dims = [float(s) for s in re.findall('viewBox=\"([0-9\. ]*)\"', svg)[0].split()]
+    percent = int((dims[-1] / dims[-2]) * 100)
+    padding = 'padding-bottom: %d%%' % percent
+    return '<div class="svg-container" style="%s" >\n%s\n</div>' % (padding, svg)
 
 
 ############
