@@ -15,9 +15,7 @@ import Network.Gitit.Interface
 import System.Exit
 import System.FilePath
 import System.Process
-import Paths_gitit (getDataFileName)
-
-import Paths_gitit (getDataFileName)
+-- import Paths_gitit (getDataFileName)
 
 {- Passes text to an external script as stdin
  - and returns with the script's stdout
@@ -71,6 +69,7 @@ argList ok usr = do
       [ ("repository-path", repositoryPath c)
       , ("templates-dir"  , templatesDir   c)
       , ("static-dir"     , staticDir      c)
+      , ("plugin-dir"     , pluginDir      c)
       , ("cache-dir"      , cacheDir       c)
       ]
 
@@ -79,6 +78,7 @@ allArgs =
   [ "repository-path"
   , "templates-dir"
   , "static-dir"
+  , "plugin-dir"
   , "cache-dir"
   , "uri"
   ]
@@ -102,6 +102,7 @@ allArgs =
  -   repository-path
  -   templates-dir
  -   static-dir
+ -   plugin-dir
  -   cache-dir
  -   uri
  -
@@ -122,9 +123,19 @@ plugin = mkPageTransformM tfm
           fmt = fromMaybe "" $ lookup "fmt" as
           nfo = fromMaybe "" $ lookup "nfo" as
       args <- argList (words nfo) as
-      out  <- liftIO $ eval bin args txt
+      bin' <- findBinary bin
+      out  <- liftIO $ eval bin' args txt
       return $ wrap fmt out
     tfm x = return x
+
+-- TODO get this to work with plugins in the ghc data dir too?
+-- TODO and in whatever logic parses the config file
+findBinary :: FilePath -> PluginM FilePath
+findBinary b = case isPrefixOf "/" b of
+                True  -> return b
+                False -> do
+                  cfg <- askConfig
+                  return $ pluginDir cfg </> b
 
 
 {- This lets you build custom external plugins
@@ -153,7 +164,8 @@ mkPlugin cls fmt bin ask = mkPageTransformM tfm
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem cls cs = do
       args <- argList ask as
-      name <- liftIO $ getDataFileName bin
+      -- name <- liftIO $ getDataFileName bin
+      name <- findBinary bin
       out  <- liftIO $ eval name args txt
       return $ wrap fmt out
     tfm x = return x
@@ -169,6 +181,7 @@ uri2path uri
   $ splitOn [pathSeparator] uri
 
 -- returns the path to the .page file associated with a request
+-- TODO should it find stuff in the ghc data dir too?
 askFile :: PluginM FilePath
 askFile = do
   cfg <- askConfig

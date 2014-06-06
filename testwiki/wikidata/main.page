@@ -7,6 +7,18 @@ Here are some code blocks.
 It's easiest to see what's going on if you click `edit`
 and compare source code to the output of `Preview`.
 
+Dot.hs
+------
+
+~~~{ .dot }
+digraph testdg {
+  a -> b;
+  a -> c;
+  b -> c;
+}
+~~~
+
+
 DepGraph.hs
 -----------
 

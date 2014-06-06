@@ -9,5 +9,5 @@ plugin :: Plugin
 plugin = mkPlugin
   "depgraph"
   "html"
-  "plugins/depgraph.py"
+  "depgraph.py"
   allArgs

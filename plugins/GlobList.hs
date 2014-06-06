@@ -11,5 +11,5 @@ plugin :: Plugin
 plugin = mkPlugin
   "globlist"
   "html"
-  "plugins/globlist.py"
+  "globlist.py"
   allArgs
