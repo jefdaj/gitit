@@ -181,7 +181,7 @@ def fix_generated_svg(args, path):
 def svg_container(args, svg):
     'takes the raw svg and puts it into a resizable svg-container div'
     dims = [float(s) for s in re.findall('viewBox=\"([0-9\. ]*)\"', svg)[0].split()]
-    percent = int((dims[-1] / dims[-2]) * 100)
+    percent = int((dims[-1] / dims[-2]) * 100) + 1
     padding = 'padding-bottom: %d%%' % percent
     return '<div class="svg-container" style="%s" >\n%s\n</div>' % (padding, svg)
 
