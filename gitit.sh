@@ -9,55 +9,87 @@
 # settings
 ###########
 
-ROOTDIR="$(cd `dirname "$0"` && pwd)"
-BINDIR="$ROOTDIR/.cabal-sandbox/bin"
+GITITDIR="$(cd `dirname "$0"` && pwd)"
+CABALDIR="$GITITDIR/.cabal-sandbox"
 
 # this is needeed because if your distro doesn't give /tmp
 # execute permissions you have to compile somewhere else,
 # or there will be all sorts of weird errors
-CABALDIR="$ROOTDIR/.cabal-sandbox"
-
 CABALTMP="$CABALDIR/tmp"
-WIKIDIR="$CABALTMP/testwiki"
 
 
 ###################
 # support routines
 ###################
 
-check_deps() {
-  # stop and warn about missing dependencies
-  deps=(bash ghc cabal python pip dot pdflatex)
-  for d in ${deps[@]}; do
-    if [[ -z "$(which $d)" ]]; then
-      read -p "WARNING! Couldn't find '$d'. Continue anyway? (y/n) " answer
-      case "$answer" in
-        y|Y) continue ;;
-        *  ) exit 1   ;;
-      esac
+prep_packages() {
+  # try to install system dependencies,
+  # and warn if it doesn't work
+  bins=(ghc cabal python pip dot pdflatex)
+  pkgs=(haskell-platform haskell-platform python python-pip graphviz texlive)
+  for n in "${!bins[@]}"; do
+    b=${bins[$n]}
+    p=${pkgs[$n]}
+    if [[ -z "$(which $b)" ]]; then
+      [[ -z "$(which apt-get)" ]] || sudo apt-get install $p
+      if [[ -z "$(which $b)" ]]; then
+        read -p "WARNING! Couldn't find system binary '$b'. Continue anyway? (y/n) " a
+        case "$a" in
+          y) continue ;;
+          *) exit 1   ;;
+        esac
+      else
+        echo "found system binary $b"
+      fi
     else
-      echo "found $d at $(which $d)"
+      echo "found system binary $b"
+    fi
+  done
+}
+
+prep_modules() {
+  # try to install python dependencies,
+  # and warn if it doesn't work
+  imps=(argparse BeautifulSoup pyparsing PIL    pydot pystache)
+  mods=(argparse BeautifulSoup pyparsing pillow pydot pystache)
+  for n in "${!imps[@]}"; do
+    i=${imps[$n]}
+    m=${mods[$n]}
+    python -c "import $i"
+    if [ $? -ne 0 ]; then
+      sudo pip install $m --upgrade
+      python -c "import $i"
+      if [ $? -ne 0 ]; then
+        read -p "WARNING! Couldn't import '$i' in python. Continue anyway? (y/n) " a
+        case "$a" in
+          y) continue ;;
+          *) exit 1   ;;
+        esac
+      else
+        echo "found python import $i"
+      fi
+    else
+      echo "found python import $i"
     fi
   done
 }
 
 prep_deps() {
-  check_deps || exit 1
-  pydeps=(pillow pydot pystache)
-  pip install ${pydeps[@]} # sudo? --upgrade?
+  prep_packages || exit 1
+  prep_modules  || exit 1
 }
 
 prep_repo() {
-  cd "$ROOTDIR"
-  #cabal update
+  cd "$GITITDIR"
+  cabal update
   cabal sandbox init
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
 prep_wiki() {
   prep_repo
-  cp -r "$ROOTDIR/testwiki" "$CABALTMP"
-  cp -r "$ROOTDIR/plugins"  "$CABALTMP/testwiki"
+  cp -r "$GITITDIR/testwiki" "$CABALTMP"
+  cp -r "$GITITDIR/plugins"  "$CABALTMP/testwiki"
   cd "$CABALTMP/testwiki/wikidata"
   [[ -d .git ]] || git init
   git add . && git commit -m 'make sure test pages will show up'
@@ -74,8 +106,8 @@ cabal_flags() {
 }
 
 cabal_vars() {
-  vars="CABAL_SANDBOX_CONFIG='$ROOTDIR/cabal.sandbox.config'"
-  vars="$vars PATH='$BINDIR:$PATH'"
+  vars="CABAL_SANDBOX_CONFIG='$GITITDIR/cabal.sandbox.config'"
+  vars="$vars PATH='$CABALDIR/bin:$PATH'"
   vars="$vars TMPDIR='$CABALTMP'"
   echo -n $vars
 }
@@ -93,7 +125,7 @@ cabal_sandbox() {
 
 gitit_build() {
   # build gitit, but don't run it yet
-  cd "$ROOTDIR"
+  cd "$GITITDIR"
   prep_deps || exit 1
   cabal_sandbox install $@ || return 1
 
@@ -104,12 +136,12 @@ gitit_build() {
 
 gitit_rebuild() {
   # delete the sandbox and run build again
-  cd "$ROOTDIR"
+  cd "$GITITDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
   gitit_build $@ || return 1
 }
 
-gitit_exec() {
+gitit_test() {
   # run the test wiki using cabal exec
   cmd='gitit --config-file testwiki.conf'
   pkill -f "$cmd" # if there's an instance running, kill it first
@@ -125,11 +157,11 @@ gitit_repl() {
   cabal repl $@
 }
 
-dispatch="$1"; shift
-case "$dispatch" in
+main="$1"; shift
+case "$main" in
   'build'  ) gitit_build   $@ ;;
   'rebuild') gitit_rebuild $@ ;;
-  'exec'   ) gitit_exec    $@ ;;
   'repl'   ) gitit_repl    $@ ;;
+  'test'   ) gitit_test    $@ ;;
   *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac
