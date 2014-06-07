@@ -81,7 +81,7 @@ prep_deps() {
 
 prep_repo() {
   cd "$GITITDIR"
-  cabal update
+  [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
