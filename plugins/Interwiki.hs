@@ -58,7 +58,12 @@ wpInterwikiMap, customInterwikiMap :: [(String, String)]
 customInterwikiMap = [("Hackage", "http://hackage.haskell.org/package/"),
                       ("Hawiki", "http://haskell.org/haskellwiki/"),
                       ("Hayoo", "http://holumbus.fh-wedel.de/hayoo/hayoo.html#0:"),
-                      ("Hoogle", "http://www.haskell.org/hoogle/?hoogle=")]
+                      ("Hoogle", "http://www.haskell.org/hoogle/?hoogle="),
+                      ("MicrobeWiki", "http://microbewiki.kenyon.edu/index.php/"),
+                      ("EcoliWiki", "http://ecoliwiki.net/colipedia/index.php/"),
+                      ("SeqAnswers", "http://seqanswers.com/wiki"),
+                      ("WikiPathways", "http://wikipathways.org/index.php/"),
+                     ]
 
 -- This mapping is derived from <https://secure.wikimedia.org/wikipedia/meta/wiki/Interwiki_map>
 -- as of 6:12 PM, 6 February 2013.
