@@ -181,9 +181,9 @@ Executable           gitit
     cpp-options:     -D_PLUGINS
   extensions:        CPP
   if impl(ghc >= 6.12)
-    ghc-options:     -Wall -threaded -fno-warn-unused-do-bind
+    ghc-options:     -Wall -threaded -fno-warn-unused-do-bind -rtsopts
   else
-    ghc-options:     -Wall -threaded
+    ghc-options:     -Wall -threaded -rtsopts
   ghc-prof-options:  -auto-all -caf-all
 
 Executable           expireGititCache
