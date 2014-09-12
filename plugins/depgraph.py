@@ -143,8 +143,14 @@ def fix_generated_svg(args, path):
     xml = md.parse(path)
     # fix the root svg element
     e = xml.getElementsByTagName('svg')[0]
-    e.removeAttribute('width')
-    e.removeAttribute('height')
+    if args['width']:
+        e.setAttribute('width', str(args['width']))
+    else:
+        e.removeAttribute('width')
+    if args['height']:
+        e.setAttribute('height', str(args['height']))
+    else:
+        e.removeAttribute('height')
     e.setAttribute('preserveAspectRatio', 'xMinYMin meet')
     e.setAttribute('class', 'svg-content')
 
@@ -196,7 +202,8 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('--rankdir', choices=['TB', 'BT', 'RL', 'LR', None], default='TB')
     ap.add_argument('--color'  , type=str, default='#61BD4D') # green
-    ap.add_argument('--width'  , type=int, default=850)
+    ap.add_argument('--width'  , type=int, default=600)
+    ap.add_argument('--height' , type=int, default=500)
     ap.add_argument('--stagger', type=int, default=3  )
     ap.add_argument('--repository-path', type=str)
     ap.add_argument('--templates-dir'  , type=str)
@@ -216,3 +223,5 @@ if __name__ == '__main__':
       svg = svg_contents(args, dotg)
       svg = svg_container(args, svg)
       print svg
+      #print args
+      #raise Exception

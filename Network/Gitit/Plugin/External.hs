@@ -58,11 +58,11 @@ mkArgs ok usr = concat $ map flagify $ screen usr
 -- formats it as command line args for external scripts
 -- also takes a predicate for filtering which args to use
 argList :: [String] -> [(String, String)] -> PluginM [String]
-argList ok usr = do
+argList ask usr = do
   c <- askConfig
   m <- askMeta
   r <- askRequest
-  return $ mkArgs ok $ concat [usr, m, cfgFlags c, reqFlags r]
+  return $ mkArgs (ask ++ map fst usr) $ concat [usr, m, cfgFlags c, reqFlags r]
   where
     reqFlags r = [("uri", rqUri r)]
     cfgFlags c =
