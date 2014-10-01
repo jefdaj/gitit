@@ -20,6 +20,8 @@ Here's the current plan
 
 The ones that work so far are:
 
+* `gitit.sh` can automatically build or rebuild the wiki.
+  It can also load the top-level functions in a repl.
 
 
 [1]: http://github.com/jgm/gitit
