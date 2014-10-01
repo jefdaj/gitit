@@ -18,7 +18,8 @@ The ones that work so far are:
   simple test wiki.
 
 * `gitit.sh` can automatically build or rebuild the wiki.
-  It can also load the top-level functions in a repl.
+  It can also load the top-level functions in a repl,
+  or launch the test wiki from `testwiki/testwiki.conf`.
 
 
 [1]: http://github.com/jgm/gitit
