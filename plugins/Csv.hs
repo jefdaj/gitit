@@ -43,6 +43,24 @@ table c t = Table c a w h r
 caption :: [(String, String)] -> [Inline]
 caption as = map Str $ maybeToList $ lookup "caption" as
 
+uri2path :: String -> FilePath
+uri2path uri
+  = concat $ intersperse [pathSeparator]
+  $ filter (/= "")                        -- remove blanks
+  $ filter (\s -> not $ isPrefixOf "_" s) -- remove _edit etc.
+  $ splitOn [pathSeparator] uri
+
+-- returns the path to the .page file associated with a request
+-- TODO should it find stuff in the ghc data dir too?
+askFile :: PluginM FilePath
+askFile = do
+  cfg <- askConfig
+  req <- askRequest
+  let p1 = repositoryPath cfg
+      p2 = uri2path $ rqUri req
+      p  = joinPath [p1, p2]
+  return p
+
 -- takes an absolute or relative gitit link
 -- and makes it into a file path relative to the running program
 link2path :: String -> PluginM FilePath
