@@ -23,6 +23,9 @@ The ones that work so far are:
 * The config file now contains a `plugin-dir` setting,
   and plugin locations are specified relative to that.
 
+* `gitit.sh` can automatically build or rebuild the wiki.
+  It can also load the top-level functions in a repl.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
