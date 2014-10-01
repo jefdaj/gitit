@@ -12,9 +12,6 @@ start from `jgm`, which tracks upstream.
 The `test-*` branches each get merged into my `master`,
 which I use for the lab notebook.
 
-Here's the current plan
-(not all branches are implemented yet):
-
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
 [3]: https://raw.githubusercontent.com/jefdaj/gitit/readme/readme/branches.png
