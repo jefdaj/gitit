@@ -1,0 +1,24 @@
+External.hs
+-----------
+
+Here are some tests of the "external" plugin,
+which lets you transform code blocks using arbitrary external programs.
+
+This should run a bash script:
+
+~~~ { .external bin="/bin/sh" fmt="plain" }
+echo "hello from $0"
+~~~
+
+This should run a python script and format the output as a paragraph:
+
+~~~ { .external bin="/usr/bin/python" fmt="para" }
+import sys
+print "hello from python", sys.version
+~~~
+
+This should generate an error:
+
+~~~ { .external bin="/bin/false" fmt="html"}
+this generates an error
+~~~
