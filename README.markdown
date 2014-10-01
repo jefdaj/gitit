@@ -12,6 +12,12 @@ start from `jgm`, which tracks upstream.
 The `test-*` branches each get merged into my `master`,
 which I use for the lab notebook.
 
+The ones that work so far are:
+
+* You can point gitit at `testwiki/testwiki.conf` to start a
+  simple test wiki.
+
+
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
 [3]: https://raw.githubusercontent.com/jefdaj/gitit/readme/readme/branches.png
