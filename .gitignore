@@ -9,3 +9,6 @@ my.conf
 gitit-users
 .cabal-sandbox
 github.conf
+
+# temp files
+*.sw*
