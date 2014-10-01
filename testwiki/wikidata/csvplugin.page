@@ -1,0 +1,40 @@
+---
+title: Csv plugin
+...
+
+Here are some tests of the csv plugin, which renders CSV
+format spreadsheets as markdown tables.
+
+You can write the spreadsheet in the page:
+
+~~~ { .csv }
+id,name,email
+1,Firstname Lastname, fake@email.com
+~~~
+
+You can also dynamically display another file.
+Paths can be relative to the wikidata dir (start with "/"),
+or the current page. Here are some tests of the path handling.
+They should all look the same:
+
+~~~ { .csv file="test2.csv" }
+this is a csv file by path relative to the page
+~~~
+
+~~~ { .csv file="/test2.csv" }
+this is a csv file by path relative to the repo
+~~~
+
+~~~ { .csv file="csvdir/test3.csv" }
+this is another one loaded path relative to the page
+~~~
+
+~~~ { .csv file="/csvdir/test3.csv" }
+this is another one loaded path relative to the repo
+~~~
+
+If the file doesn't exist you get an error:
+
+~~~ { .csv file="nonexistent.csv" }
+this should print an error
+~~~
