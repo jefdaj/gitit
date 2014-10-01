@@ -17,6 +17,11 @@ Here's the current plan
 
 ![branches graph][3]
 
+
+The ones that work so far are:
+
+
+
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
 [3]: https://raw.githubusercontent.com/jefdaj/gitit/readme/readme/branches.png
