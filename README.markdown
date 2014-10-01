@@ -27,6 +27,8 @@ The ones that work so far are:
   It can also load the top-level functions in a repl,
   or launch the test wiki (located in `testwiki/`).
 
+* The "external" plugin lets you make your own external page transform plugins.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
