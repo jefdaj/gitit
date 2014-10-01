@@ -23,6 +23,9 @@ The ones that work so far are:
 * `gitit.sh` can automatically build or rebuild the wiki.
   It can also load the top-level functions in a repl.
 
+* You can point gitit at `testwiki/testwiki.conf` to start a
+  simple test wiki.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
