@@ -14,8 +14,9 @@ import Data.Maybe
 import Network.Gitit.Interface
 import System.Exit
 import System.FilePath
+import System.FilePath.Canonical
 import System.Process
--- import Paths_gitit (getDataFileName)
+import Paths_gitit (getDataFileName)
 
 {- Passes text to an external script as stdin
  - and returns with the script's stdout
@@ -47,32 +48,44 @@ wrap "para" txt = Para  [Str txt]
 wrap _      txt = Plain [Str txt]
 
 
-mkArgs :: [String] -> [(String, String)] -> [String]
-mkArgs ok usr = concat $ map flagify $ screen usr
+mkArgs :: [String] -> [(String, [String])] -> [String]
+mkArgs ask usr = concat $ map flagify $ screen usr
   where
-    screen = filter (\(k,_) -> elem k ok)
-    flagify (k, v) = ["--" ++ k, v]
+    screen = filter (\(k,_) -> elem k ask)
+    flagify (k, vs) = ("--" ++ k):vs
 
 
 -- asks for the plugin data available from gitit and
 -- formats it as command line args for external scripts
--- also takes a predicate for filtering which args to use
+-- also takes a predicate for filtering which optional args to pass
+-- TODO clean this up and de-duplicate
 argList :: [String] -> [(String, String)] -> PluginM [String]
 argList ask usr = do
   c <- askConfig
   m <- askMeta
   r <- askRequest
-  -- TODO why did I think (ask ++ map fst usr) was a good idea?
-  return $ mkArgs ask $ concat [usr, m, cfgFlags c, reqFlags r]
-  where
-    reqFlags r = [("uri", rqUri r)]
-    cfgFlags c =
-      [ ("repository-path", repositoryPath c)
-      , ("templates-dir"  , templatesDir   c)
-      , ("static-dir"     , staticDir      c)
-      , ("plugin-dir"     , pluginDir      c)
-      , ("cache-dir"      , cacheDir       c)
+  configPlugins    <- liftIO $ canonical $ pluginDir      c
+  configStatic     <- liftIO $ canonical $ staticDir      c
+  configTemplates  <- liftIO $ canonical $ templatesDir   c
+  configCache      <- liftIO $ canonical $ cacheDir       c
+  configRepository <- liftIO $ canonical $ repositoryPath c
+  defaultPlugins   <- liftIO $ getDataFileName $ "plugins"
+  defaultStatic    <- liftIO $ getDataFileName $ "data" </> "static"
+  defaultTemplates <- liftIO $ getDataFileName $ "data" </> "templates"
+  let
+    sndSingletons x = map (\(k,v) -> (k,[v])) x
+    usrFlags  = sndSingletons usr
+    metaFlags = sndSingletons m
+    reqFlags  = [("uri", [rqUri r])]
+    cfgFlags  =
+      [ ("cache-dir"      , [canonicalFilePath configCache                      ])
+      , ("repository-path", [canonicalFilePath configRepository                 ])
+      , ("plugin-dir"     , [canonicalFilePath configPlugins  , defaultPlugins  ])
+      , ("static-dir"     , [canonicalFilePath configStatic   , defaultStatic   ])
+      , ("templates-dir"  , [canonicalFilePath configTemplates, defaultTemplates])
       ]
+  -- TODO why did I think (ask ++ map fst usr) was a good idea?
+  return $ mkArgs ask $ concat [usrFlags, metaFlags, cfgFlags, reqFlags]
 
 allArgs :: [String]
 allArgs =

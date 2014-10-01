@@ -125,7 +125,7 @@ Library
     cpp-options:     -D_PLUGINS
   build-depends:     base >= 3, pandoc >= 1.12.4 && < 1.14,
                      pandoc-types >= 1.12.3 && < 1.13, filepath, safe,
-                     transformers
+                     transformers, canonical-filepath
   extensions:        CPP
   if impl(ghc >= 6.12)
     ghc-options:     -Wall -fno-warn-unused-do-bind
@@ -186,7 +186,7 @@ Executable           gitit
   else
     build-depends:   network >= 2 && < 2.6
   if flag(plugins)
-    build-depends:   ghc, ghc-paths
+    build-depends:   ghc, ghc-paths, canonical-filepath
     cpp-options:     -D_PLUGINS
   extensions:        CPP
   if impl(ghc >= 6.12)
