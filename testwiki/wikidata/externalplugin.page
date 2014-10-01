@@ -1,5 +1,6 @@
-External.hs
------------
+---
+title: External plugin
+...
 
 Here are some tests of the "external" plugin,
 which lets you transform code blocks using arbitrary external programs.
