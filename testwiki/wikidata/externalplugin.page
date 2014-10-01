@@ -7,7 +7,7 @@ which lets you transform code blocks using arbitrary external programs.
 
 This should run a bash script:
 
-~~~ { .external bin="/bin/sh" fmt="plain" }
+~~~ { .external bin="/bin/bash" fmt="plain" }
 echo "hello from $0"
 ~~~
 
