@@ -62,7 +62,8 @@ argList ask usr = do
   c <- askConfig
   m <- askMeta
   r <- askRequest
-  return $ mkArgs (ask ++ map fst usr) $ concat [usr, m, cfgFlags c, reqFlags r]
+  -- TODO why did I think (ask ++ map fst usr) was a good idea?
+  return $ mkArgs ask $ concat [usr, m, cfgFlags c, reqFlags r]
   where
     reqFlags r = [("uri", rqUri r)]
     cfgFlags c =
@@ -121,7 +122,7 @@ plugin = mkPageTransformM tfm
     tfm (CodeBlock (_, cs, as) txt) | elem "external" cs = do
       let bin = fromMaybe "" $ lookup "bin" as
           fmt = fromMaybe "" $ lookup "fmt" as
-          nfo = fromMaybe "" $ lookup "nfo" as
+          nfo = fromMaybe "" $ lookup "nfo" as -- TODO rename nfo to ask?
       args <- argList (words nfo) as
       bin' <- findBinary bin
       out  <- liftIO $ eval bin' args txt
