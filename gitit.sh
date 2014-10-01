@@ -54,6 +54,15 @@ prep_repo() {
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
+prep_wiki() {
+  prep_repo
+  cp -r "$GITITDIR/testwiki" "$CABALTMP"
+  cp -r "$GITITDIR/plugins"  "$CABALTMP/testwiki"
+  cd "$CABALTMP/testwiki/wikidata"
+  [[ -d .git ]] || git init
+  git add . && git commit -m 'make sure test pages will show up'
+}
+
 cabal_flags() {
   # and this is needed because ghc doesn't understand cabal sandboxes yet
   # see http://mappend.net/posts/ghc-and-cabal-sandbox-playing-ni
@@ -100,6 +109,16 @@ gitit_rebuild() {
   gitit_build $@ || return 1
 }
 
+gitit_test() {
+  # run the test wiki using cabal exec
+  cmd='gitit --config-file testwiki.conf'
+  pkill -f "$cmd" # if there's an instance running, kill it first
+  gitit_build || return 1
+  prep_wiki
+  cmd="'cd '$CABALTMP/testwiki' && $cmd'"
+  eval "echo $cmd $@ | $(cabal_vars) cabal exec bash"
+}
+
 gitit_repl() {
   # load gitit in a cabal repl
   gitit_build || return 1
@@ -111,5 +130,6 @@ case "$main" in
   'build'  ) gitit_build   $@ ;;
   'rebuild') gitit_rebuild $@ ;;
   'repl'   ) gitit_repl    $@ ;;
+  'test'   ) gitit_test    $@ ;;
   *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac
