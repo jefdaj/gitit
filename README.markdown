@@ -20,6 +20,8 @@ Here's the current plan
 
 The ones that work so far are:
 
+* The config file now contains a `plugin-dir` setting,
+  and plugin locations are specified relative to that.
 
 
 [1]: http://github.com/jgm/gitit
