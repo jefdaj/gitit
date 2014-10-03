@@ -20,6 +20,9 @@ Here's the current plan
 
 The ones that work so far are:
 
+* `Dot.hs` generates inline svg images now,
+  which can include clickable links.
+
 * You can point gitit at `testwiki/testwiki.conf` to start a
   simple test wiki.
 
