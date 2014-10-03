@@ -16,6 +16,8 @@ enhancements. Things that work so far:
 * `Dot.hs` generates inline svg images now,
   which can include clickable links.
 
+* Added an explicit `cacheDir`.
+
 * You can point gitit at `testwiki/testwiki.conf` to start a
   simple test wiki.
 
