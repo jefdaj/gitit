@@ -13,6 +13,9 @@ enhancements. Things that work so far:
   It can also load the top-level functions in a  `repl`,
   or `serve` the test wiki.
 
+* `Dot.hs` generates inline svg images now,
+  which can include clickable links.
+
 * You can point gitit at `testwiki/testwiki.conf` to start a
   simple test wiki.
 
