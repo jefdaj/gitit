@@ -20,6 +20,8 @@ Here's the current plan
 
 The ones that work so far are:
 
+* Added an explicit `cacheDir`.
+
 * `Dot.hs` generates inline svg images now,
   which can include clickable links.
 
