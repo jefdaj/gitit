@@ -1,0 +1,23 @@
+---
+title: Files plugin
+...
+
+This should show a list of files in the same folder as this page
+which have `main` in their filenames:
+
+~~~{ .files }
+main
+~~~
+
+
+And this should show files in the `dir1` folder with `txt` in their names:
+
+~~~{ .files dir="dir1" }
+txt
+~~~
+
+This should show the one dir inside `dir1` which also has `dir` in its name:
+
+~~~{ .files dir="dir1" }
+dir
+~~~
