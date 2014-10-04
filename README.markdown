@@ -17,9 +17,9 @@ The ones that work so far are:
 * You can point gitit at `testwiki/testwiki.conf` to start a
   simple test wiki.
 
-* `gitit.sh` can automatically build or rebuild the wiki.
-  It can also load the top-level functions in a repl,
-  or launch the test wiki (located in `testwiki/`).
+* `gitit.sh` can automatically `build` or  `rebuild` gitit.
+  It can also load the top-level functions in a  `repl`,
+  or `serve` the test wiki.
 
 
 [1]: http://github.com/jgm/gitit
