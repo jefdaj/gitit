@@ -40,7 +40,6 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
     unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
   svg <- liftIO $ readFile outfile
   return $ RawBlock (Format "html") svg
-
 transformBlock x = return x
 
 -- | Generate a unique filename given the file's contents.
