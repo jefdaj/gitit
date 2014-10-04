@@ -12,3 +12,7 @@ github.conf
 
 # temp files
 *.sw*
+
+# haskell files
+*.hi
+*.o
