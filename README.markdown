@@ -29,6 +29,8 @@ The ones that work so far are:
 
 * There are some extra bio-related wiki links in `Interwiki.hs`
 
+* Added an explicit `cacheDir`.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
