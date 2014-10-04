@@ -21,9 +21,6 @@ The ones that work so far are:
   It can also load the top-level functions in a repl,
   or launch the test wiki (located in `testwiki/`).
 
-* You can point gitit at `testwiki/testwiki.conf` to start a
-  simple test wiki.
-
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
