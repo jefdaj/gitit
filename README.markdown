@@ -31,6 +31,9 @@ The ones that work so far are:
 
 * Added an explicit `cacheDir`.
 
+* `Dot.hs` generates inline svg images now,
+  which can include clickable links.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
