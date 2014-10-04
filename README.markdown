@@ -34,6 +34,10 @@ The ones that work so far are:
 * `Dot.hs` generates inline svg images now,
   which can include clickable links.
 
+* The config file now contains a `plugin-dir` setting,
+  and plugin locations are specified relative to that.
+
+* The "external" plugin lets you make your own external page transform plugins.
 
 
 [1]: http://github.com/jgm/gitit

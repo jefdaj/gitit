@@ -21,6 +21,7 @@ module Network.Gitit.Initialize ( initializeGititState
                                 , compilePageTemplate
                                 , createCacheIfMissing
                                 , createStaticIfMissing
+                                , createPluginIfMissing
                                 , createRepoIfMissing
                                 , createDefaultPages
                                 , createTemplateIfMissing )
@@ -48,7 +49,8 @@ initializeGititState :: Config -> IO ()
 initializeGititState conf = do
   let userFile' = userFile conf
       pluginModules' = pluginModules conf
-  plugins' <- loadPlugins pluginModules'
+      plugindir = pluginDir conf
+  plugins' <- loadPlugins plugindir pluginModules'
 
   userFileExists <- doesFileExist userFile'
   users' <- if userFileExists
@@ -174,6 +176,9 @@ createIfMissing fs p a comm cont = do
        Right _ -> logM "gitit" WARNING ("Added " ++ p ++ " to repository")
        Left ResourceExists -> return ()
        Left e              -> throwIO e >> return ()
+
+createPluginIfMissing :: Config -> IO ()
+createPluginIfMissing conf = createDirectoryIfMissing True $ pluginDir conf
 
 -- | Create static directory unless it exists.
 createStaticIfMissing :: Config -> IO ()
