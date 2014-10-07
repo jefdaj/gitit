@@ -37,6 +37,7 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
   cached <- liftIO $ doesFileExist outfile
   unless cached $ do
     (ec, _out, err) <- liftIO $ readProcessWithExitCode "dot" dotargs contents
+    -- TODO fix so it doesn't crash the wiki with an error!
     unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
   svg <- liftIO $ readFile outfile
   return $ RawBlock (Format "html") svg
