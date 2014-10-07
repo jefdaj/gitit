@@ -1,0 +1,38 @@
+---
+title: Symlink handling
+...
+
+Currently, gitit handles symlinks by loading their contents as text.
+That's technically right I suppose because it's what git stores,
+but not very helpful if you're trying to use symlinked files in the wiki!
+
+So I'm attempting to get it to follow them instead.
+The idea is to:
+
+#. Read the link text from git just like it does now
+#. Recognize that the text is a symlink
+#. Retrieve the actual file contents from outside git if it exists
+#. Print a nice error otherwise
+
+Here's a couple test files:
+
+* [test.txt](test.txt)
+* [dir1/test.txt](/dir1/test.txt)
+* [dir1/dir2/test.txt](/dir1/dir2/test.txt)
+
+And symlinks to them:
+
+* [test.txt](/test-link.txt)
+* [dir1/text.txt](/test-link-2.txt)
+* [dir1/dir2/test.txt](/test-link-3.txt)
+
+Finally, a link to a symlink to a nonexistent file:
+
+* [nonexistent](/nonexistent-link.txt)
+
+To handle the paths right, gitit needs to:
+
+#. Get the dirname of the symlinked file
+#. Read the contents of the symlink as text
+#. If the symlink is relative (doesn't start with '/'),
+   join the dirname to it
