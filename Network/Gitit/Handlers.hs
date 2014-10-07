@@ -86,13 +86,14 @@ import System.Log.Logger (logM, Priority(..))
 -- reads a file stored in a filestore.
 -- behaves like `retrieve` for normal files,
 -- but also attempts to follow symlinks
+-- TODO is it dangerous/slow to treat the whole file content as a path?
 retrieveContents :: FileStore -> FilePath -> Maybe RevisionId -> IO B.ByteString
-retrieveContents fs linkpath rev = do
-  res <- liftIO $ E.try (retrieve fs linkpath rev :: IO B.ByteString)
+retrieveContents fs filepath rev = do
+  res <- liftIO $ E.try (retrieve fs filepath rev :: IO B.ByteString)
   case res of
     Left (e :: E.SomeException) -> error (show e)
     Right filecontent -> do
-      let (targetdir, _) = splitFileName linkpath
+      let (targetdir, _) = splitFileName filepath
           targetpath = (show targetdir) </> (show filecontent)
       de <- doesFileExist targetpath
       case de of
