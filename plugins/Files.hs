@@ -17,6 +17,9 @@ module Files (plugin) where
 -- If no `dir` attribute is given it defaults to the location
 -- of the current page. If the block is empty it matches all files.
 
+-- TODO is there any good way to hide "about" pages etc?
+-- TODO add sorting so you can look at dates in reverse
+
 import Control.Exception (try, SomeException)
 import Data.FileStore (Resource(FSFile, FSDirectory), directory)
 import Data.List (intercalate, isInfixOf)
