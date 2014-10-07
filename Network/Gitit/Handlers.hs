@@ -80,7 +80,26 @@ import Network.HTTP (urlEncodeVars)
 import Data.Time (getCurrentTime, addUTCTime)
 import Data.Time.Clock (diffUTCTime, UTCTime(..))
 import Data.FileStore
+import System.Directory (doesFileExist)
 import System.Log.Logger (logM, Priority(..))
+
+-- reads a file stored in a filestore.
+-- behaves like `retrieve` for normal files,
+-- but also attempts to follow symlinks
+retrieveContents :: FileStore -> FilePath -> Maybe RevisionId -> IO B.ByteString
+retrieveContents fs linkpath rev = do
+  res <- liftIO $ E.try (retrieve fs linkpath rev :: IO B.ByteString)
+  case res of
+    Left (e :: E.SomeException) -> error (show e)
+    Right filecontent -> do
+      let (targetdir, _) = splitFileName linkpath
+          targetpath = (show targetdir) </> (show filecontent)
+      de <- doesFileExist targetpath
+      case de of
+        False -> return filecontent
+        True -> do
+          targetcontent <- B.readFile targetpath
+          return targetcontent
 
 handleAny :: Handler
 handleAny = withData $ \(params :: Params) -> uriRest $ \uri ->
