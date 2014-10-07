@@ -51,6 +51,7 @@ prep_repo() {
   cd "$GITITDIR"
   [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
+  cabal sandbox add-source filestore
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
