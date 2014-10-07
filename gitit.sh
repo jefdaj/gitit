@@ -95,6 +95,7 @@ cabal_sandbox() {
 gitit_build() {
   # build gitit, but don't run it yet
   cd "$GITITDIR"
+  git submodule update --init --recursive
   prep_packages || exit 1
   cabal_sandbox install $@ || return 1
 
