@@ -1,0 +1,8 @@
+maybe the actual messed-up code is in filestore,
+but could still band-aid it by reading file contents,
+checking if they're a symlink, and loading it instead if so
+
+System.Posix.Files.readSymbolicLink :: FilePath -> IO FilePath,
+and then just read the new FilePath instead
+
+isSymbolicLink :: FileStatus -> Book
