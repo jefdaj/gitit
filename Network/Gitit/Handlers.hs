@@ -80,27 +80,7 @@ import Network.HTTP (urlEncodeVars)
 import Data.Time (getCurrentTime, addUTCTime)
 import Data.Time.Clock (diffUTCTime, UTCTime(..))
 import Data.FileStore
-import System.Directory (doesFileExist)
 import System.Log.Logger (logM, Priority(..))
-
--- reads a file stored in a filestore.
--- behaves like `retrieve` for normal files,
--- but also attempts to follow symlinks
--- TODO is it dangerous/slow to treat the whole file content as a path?
-retrieveContents :: FileStore -> FilePath -> Maybe RevisionId -> IO B.ByteString
-retrieveContents fs filepath rev = do
-  res <- liftIO $ E.try (retrieve fs filepath rev :: IO B.ByteString)
-  case res of
-    Left (e :: E.SomeException) -> error (show e)
-    Right filecontent -> do
-      let (targetdir, _) = splitFileName filepath
-          targetpath = (show targetdir) </> (show filecontent)
-      de <- doesFileExist targetpath
-      case de of
-        False -> return filecontent
-        True -> do
-          targetcontent <- B.readFile targetpath
-          return targetcontent
 
 handleAny :: Handler
 handleAny = withData $ \(params :: Params) -> uriRest $ \uri ->
