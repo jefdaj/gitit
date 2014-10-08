@@ -1,0 +1,1 @@
+actual contents of wikidata/dir1/test.txt

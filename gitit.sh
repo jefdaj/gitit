@@ -51,6 +51,7 @@ prep_repo() {
   cd "$GITITDIR"
   [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
+  cabal sandbox add-source filestore
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
@@ -94,6 +95,7 @@ cabal_sandbox() {
 gitit_build() {
   # build gitit, but don't run it yet
   cd "$GITITDIR"
+  git submodule update --init --recursive
   prep_packages || exit 1
   cabal_sandbox install $@ || return 1
 
@@ -109,7 +111,7 @@ gitit_rebuild() {
   gitit_build $@ || return 1
 }
 
-gitit_test() {
+gitit_serve() {
   # run the test wiki using cabal exec
   cmd='gitit +RTS -IO -RTS --config-file testwiki.conf'
   pkill -f "$cmd" # if there's an instance running, kill it first
@@ -130,6 +132,6 @@ case "$main" in
   'build'  ) gitit_build   $@ ;;
   'rebuild') gitit_rebuild $@ ;;
   'repl'   ) gitit_repl    $@ ;;
-  'test'   ) gitit_test    $@ ;;
+  'serve'  ) gitit_serve    $@ ;;
   *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac
