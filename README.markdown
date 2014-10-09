@@ -25,6 +25,11 @@ enhancements. Things that work so far:
 
 * The "external" plugin lets you make your own external page transform plugins.
 
+* `Dot.hs` generates inline svg images now,
+  which can include clickable links.
+
+* Added an explicit `cacheDir`.
+
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
