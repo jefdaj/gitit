@@ -31,8 +31,8 @@ plugin = mkPageTransformM transformBlock
 transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classes = do
   cfg <- askConfig
-  let prefix  = fromMaybe "diagram" $ lookup "name" namevals
-      outfile = staticDir cfg </> "img" </> prefix ++ "-" ++ uniqueName contents ++ ".svg"
+  let prefix  = fromMaybe "dot" $ lookup "name" namevals
+      outfile = cacheDir cfg </> prefix ++ "-" ++ uniqueName contents ++ ".svg"
       dotargs = ["-Tsvg", "-o", outfile]
   cached <- liftIO $ doesFileExist outfile
   unless cached $ do
