@@ -25,7 +25,7 @@ import Network.Gitit.Interface
 -- - bad
 -- ~~~
 --
--- If no `dir` attribute is given it defaults to the location
+-- If no `dir` attribute is given it defaults to the dirname
 -- of the current page. If no 'sort' attribute is given
 -- it defaults to 'forward'. If the block is empty it matches all files.
 
@@ -50,7 +50,7 @@ transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
               Right conds -> case order sortord of
                             Left  s -> s
                             Right o -> let matches = restrict conds files
-                                           sorted  = orderedSort o matches
+                                           sorted  = ordered o matches
                                        in render prefix sorted
   return $ RawBlock (Format "html") html
 transformBlock x = return x
@@ -67,9 +67,9 @@ order "forward" = Right Forward
 order "reverse" = Right Reverse
 order s = Left $ "error: '" ++ s ++ "' is not a valid ordering"
 
-orderedSort :: Ord a => SortOrder -> [a] -> [a]
-orderedSort Forward = sort
-orderedSort Reverse = reverse . sort
+ordered :: Ord a => SortOrder -> [a] -> [a]
+ordered Forward = sort
+ordered Reverse = reverse . sort
 
 
 ------------------------
