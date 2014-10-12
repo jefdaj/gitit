@@ -19,7 +19,7 @@ import Network.Gitit.Interface
 -- whose names include `.png` or `.jpg` but not `bad`,
 -- sorted in reverse alphabetical order:
 --
--- ~~~ {.files dir="dir1" sort="reverse" }
+-- ~~~ { .files dir="dir1" sort="reverse" }
 -- + .png
 -- + .jpg
 -- - bad
@@ -30,16 +30,15 @@ import Network.Gitit.Interface
 -- it defaults to 'forward'. If the block is empty it matches all files.
 
 
---------------------
--- work with Gitit
---------------------
+----------------------
+-- main Gitit plugin
+----------------------
 
 plugin :: Plugin
 plugin = mkPageTransformM transformBlock
 
 transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
-  cfg <- askConfig
   req <- askRequest
   let reqdir   = reqDir req
       matchdir = fromMaybe reqdir    $ lookup "dir"  as
@@ -47,10 +46,10 @@ transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
       prefix   = if null matchdir then "" else matchdir ++ "/"
   files <- listFiles matchdir
   let html = case conditions (lines txt) of
-              Left  s  -> s
-              Right cs -> case order sortord of
+              Left  s     -> s
+              Right conds -> case order sortord of
                             Left  s -> s
-                            Right o -> let matches = restrict cs files
+                            Right o -> let matches = restrict conds files
                                            sorted  = orderedSort o matches
                                        in render prefix sorted
   return $ RawBlock (Format "html") html
@@ -68,7 +67,7 @@ order "forward" = Right Forward
 order "reverse" = Right Reverse
 order s = Left $ "error: '" ++ s ++ "' is not a valid ordering"
 
--- orderedSort :: SortOrder -> [a] -> [a]
+orderedSort :: Ord a => SortOrder -> [a] -> [a]
 orderedSort Forward = sort
 orderedSort Reverse = reverse . sort
 
@@ -82,7 +81,7 @@ listFiles dir = do
   fs  <- askFileStore
   res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
   case res of
-    Left  error -> return []
+    Left  _     -> return []
     Right files -> return files
 
 resPath :: Resource -> FilePath
@@ -96,9 +95,9 @@ render :: String -> [Resource] -> String
 render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
 
 
--------------------------
--- work with Conditions
--------------------------
+-----------------------------------
+-- filter Resources by Conditions
+-----------------------------------
 
 data Condition = Include String | Exclude String
   deriving Show
@@ -125,7 +124,31 @@ include s r = s `isInfixOf` resPath r
 exclude :: String -> Resource -> Bool
 exclude s = not . include s
 
+excludesOnly :: [Condition] -> [String]
+excludesOnly [] = []
+excludesOnly (c:cs) = let rest = excludesOnly cs
+                      in case c of
+                        Include _ -> rest
+                        Exclude s -> s:rest
+
+includesOnly :: [Condition] -> [String]
+includesOnly [] = []
+includesOnly (c:cs) = let rest = includesOnly cs
+                      in case c of
+                        Include s -> s:rest
+                        Exclude _ -> rest
+
+includeAny :: [String] -> Resource -> Bool
+includeAny ss r = any (\s -> include s r) ss
+
+excludeAll :: [String] -> Resource -> Bool
+excludeAll ss r = all (\s -> exclude s r) ss
+
+anyIncludeNoExclude :: [Condition] -> Resource -> Bool
+anyIncludeNoExclude cs r = and [includes, excludes]
+  where
+    includes = includeAny (includesOnly cs) r
+    excludes = excludeAll (excludesOnly cs) r
+
 restrict :: [Condition] -> [Resource] -> [Resource]
-restrict []             rs = rs
-restrict (Include s:cs) rs = restrict cs $ filter (include s) rs
-restrict (Exclude s:cs) rs = restrict cs $ filter (exclude s) rs
+restrict cs rs = filter (anyIncludeNoExclude cs) rs
