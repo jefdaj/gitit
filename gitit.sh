@@ -108,6 +108,7 @@ gitit_rebuild() {
   # delete the sandbox and run build again
   cd "$GITITDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
+  rm -rf filestore
   gitit_build $@ || return 1
 }
 
