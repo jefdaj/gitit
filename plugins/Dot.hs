@@ -8,7 +8,7 @@ module Dot (plugin) where
 -- ~~~
 --
 -- The "dot" executable must be in the path.
--- The generated svg file will be cached in the static img directory.
+-- The generated svg file will be cached in the cache directory.
 -- A unique name will be generated from a hash of the file contents,
 -- prefixed with the 'name' attribute if one is given.
 
@@ -32,7 +32,7 @@ transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classes = do
   cfg <- askConfig
   let prefix  = fromMaybe "diagram" $ lookup "name" namevals
-      outfile = staticDir cfg </> "img" </> prefix ++ "-" ++ uniqueName contents ++ ".svg"
+      outfile = cacheDir cfg </> prefix ++ "-" ++ uniqueName contents ++ ".svg"
       dotargs = ["-Tsvg", "-o", outfile]
   cached <- liftIO $ doesFileExist outfile
   unless cached $ do
