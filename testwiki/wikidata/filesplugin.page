@@ -11,9 +11,10 @@ which have `main` but not `swp` in their filenames:
 ~~~
 
 
-And this should show files in the `dir1` folder with `txt` in their names:
+And this should show files in the `dir1` folder with `txt` in their names
+in reverse alphabetical order:
 
-~~~{ .files dir="dir1" }
+~~~{ .files dir="dir1" sort="reverse" }
 + txt
 ~~~
 

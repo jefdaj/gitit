@@ -3,7 +3,7 @@ module Files (plugin) where
 import Control.Exception (try, SomeException)
 import Data.Either
 import Data.FileStore (Resource(FSFile, FSDirectory), directory)
-import Data.List (intercalate, isInfixOf)
+import Data.List (intercalate, isInfixOf, sort)
 import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
 
@@ -13,20 +13,21 @@ import Network.Gitit.Interface
 -- but more flexible because you can filter the results
 -- and show different subsets of your files,
 -- maybe with separate explanations.
+-- You can also reverse the sort order.
 --
 -- For example, this would list files in `dir1`
--- whose names include `.png` or `.jpg` but not `bad`:
+-- whose names include `.png` or `.jpg` but not `bad`,
+-- sorted in reverse alphabetical order:
 --
--- ~~~ {.files dir="dir1"}
+-- ~~~ {.files dir="dir1" sort="reverse" }
 -- + .png
 -- + .jpg
 -- - bad
 -- ~~~
 --
 -- If no `dir` attribute is given it defaults to the location
--- of the current page. If the block is empty it matches all files.
-
--- TODO add sorting so you can look at dates in reverse
+-- of the current page. If no 'sort' attribute is given
+-- it defaults to 'forward'. If the block is empty it matches all files.
 
 
 --------------------
@@ -41,15 +42,35 @@ transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
   cfg <- askConfig
   req <- askRequest
   let reqdir   = reqDir req
-      matchdir = fromMaybe reqdir $ lookup "dir" as
+      matchdir = fromMaybe reqdir    $ lookup "dir"  as
+      sortord  = fromMaybe "forward" $ lookup "sort" as
       prefix   = if null matchdir then "" else matchdir ++ "/"
   files <- listFiles matchdir
   let html = case conditions (lines txt) of
               Left  s  -> s
-              Right cs -> let matches = restrict cs files
-                          in show $ fileListToHtmlNoUplink "" prefix matches
+              Right cs -> case order sortord of
+                            Left  s -> s
+                            Right o -> let matches = restrict cs files
+                                           sorted  = orderedSort o matches
+                                       in render prefix sorted
   return $ RawBlock (Format "html") html
 transformBlock x = return x
+
+
+-------------------------
+-- work with SortOrders
+-------------------------
+
+data SortOrder = Forward | Reverse
+
+order :: String -> Either String SortOrder
+order "forward" = Right Forward
+order "reverse" = Right Reverse
+order s = Left $ "error: '" ++ s ++ "' is not a valid ordering"
+
+-- orderedSort :: SortOrder -> [a] -> [a]
+orderedSort Forward = sort
+orderedSort Reverse = reverse . sort
 
 
 ------------------------
@@ -71,6 +92,9 @@ resPath (FSDirectory d) = d
 reqDir :: Request -> FilePath
 reqDir = intercalate "/" . init . rqPaths
 
+render :: String -> [Resource] -> String
+render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
+
 
 -------------------------
 -- work with Conditions
@@ -86,7 +110,7 @@ trim = unwords . words
 condition :: String -> Either String Condition
 condition ('+':cs) = Right $ Include (trim cs)
 condition ('-':cs) = Right $ Exclude (trim cs)
-condition s        = Left  $ "error: '" ++ s ++ "' is not a valid condition"
+condition s        = Left $ "error: '" ++ s ++ "' is not a valid condition"
 
 conditions :: [String] -> Either String [Condition]
 conditions ss = if null failed then Right (rights parsed) else Left errmsg
