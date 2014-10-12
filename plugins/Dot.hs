@@ -32,8 +32,7 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
                                 Nothing   -> ([], uniqueName contents ++ ".png")
   liftIO $ do
     (ec, _out, err) <- readProcessWithExitCode "dot" ["-Tpng", "-o",
-                         staticDir cfg </> "img" </> outfile] contents
-    let attr = ("image", [], [])
+                         cacheDir cfg </> "img" </> outfile] contents
     if ec == ExitSuccess
        then return $ Para [Image attr name ("/img" </> outfile, "")]
        else error $ "dot returned an error status: " ++ err
