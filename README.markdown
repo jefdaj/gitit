@@ -1,4 +1,5 @@
-feature-cache-dir
-=================
+feature-svg-dot-diagrams
+========================
 
-Adds a `cache-dir` setting and puts images from `Dot.hs` there.
+Clickable SVG dot diagrams.
+Requires the `dot` binary from `graphviz`, same as regular dot diagrams.
