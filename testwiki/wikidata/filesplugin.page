@@ -3,21 +3,24 @@ title: Files plugin
 ...
 
 This should show a list of files in the same folder as this page
-which have `main` in their filenames:
+which have `main` but not `swp` in their filenames:
 
 ~~~{ .files }
-main
++ main
+- swp
 ~~~
 
 
 And this should show files in the `dir1` folder with `txt` in their names:
 
 ~~~{ .files dir="dir1" }
-txt
++ txt
 ~~~
 
-This should show the one dir inside `dir1` which also has `dir` in its name:
+This should show the one dir inside `dir1` which also has `dir` in its name,
+but not `dir3`:
 
 ~~~{ .files dir="dir1" }
-dir
++ dir
+- dir3
 ~~~
