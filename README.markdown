@@ -4,39 +4,15 @@ Gitit
 This is my fork of [gitit][1].
 I'm using it as the basis of my [electronic lab notebook][2],
 and also trying to contribute back some plugins and other
-enhancements.
-
-Each feature I develop has its own `dev-<featurename>`
-and `test-<featurename>` branches. The `dev-*` branches
-start from `jgm`, which tracks upstream.
-The `test-*` branches each get merged into my `master`,
-which I use for the lab notebook.
-
-Here's the current plan
-(not all branches are implemented yet):
-
-![branches graph][3]
-
-
-The ones that work so far are:
-
-* The config file now contains a `plugin-dir` setting,
-  and plugin locations are specified relative to that.
-
-* `gitit.sh` can automatically build or rebuild the wiki.
-  It can also load the top-level functions in a repl,
-  or launch the test wiki (located in `testwiki/`).
+enhancements. Things that work so far:
 
 * You can point gitit at `testwiki/testwiki.conf` to start a
   simple test wiki.
 
-* `gitit.sh` can automatically build or rebuild the wiki.
-  It can also load the top-level functions in a repl,
-  or launch the test wiki (located in `testwiki/`).
-
-* The "external" plugin lets you make your own external page transform plugins.
+* `gitit.sh` can automatically `build` or  `rebuild` gitit.
+  It can also load the top-level functions in a  `repl`,
+  or `serve` the test wiki.
 
 
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
-[3]: https://raw.githubusercontent.com/jefdaj/gitit/readme/readme/branches.png
