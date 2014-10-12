@@ -16,6 +16,7 @@ in reverse alphabetical order:
 
 ~~~{ .files dir="dir1" sort="reverse" }
 + txt
++ bob
 ~~~
 
 This should show the one dir inside `dir1` which also has `dir` in its name,
