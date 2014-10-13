@@ -122,6 +122,7 @@ Library
                      Network.Gitit.Plugins.CiteUtils,
                      Network.Gitit.Plugins.Csv,
                      Network.Gitit.Plugins.Dot,
+                     Network.Gitit.Plugins.External,
                      Network.Gitit.Plugins.Files,
                      Network.Gitit.Plugins.RelatedFiles,
                      Network.Gitit.Rpxnow,

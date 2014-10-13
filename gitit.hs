@@ -86,6 +86,7 @@ main = do
   createRepoIfMissing conf
   createCacheIfMissing conf
   createStaticIfMissing conf
+  createPluginIfMissing conf
   createTemplateIfMissing conf
 
   -- initialize state
