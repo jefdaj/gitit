@@ -7,5 +7,5 @@ plugin :: Plugin
 plugin = mkPlugin
   "perlexample"    -- input block class
   "html"           -- output block class
-  "perlexample.py" -- name of script
+  "perlexample.pl" -- name of script
   allArgs          -- list of args to pass
