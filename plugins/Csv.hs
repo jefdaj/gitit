@@ -7,10 +7,6 @@ import Data.List
 import Data.List.Split
 import Data.Maybe
 import Network.Gitit.Interface
-
--- TODO add this to Network.Gitit.Interface
--- import Network.Gitit.Plugin.External (link2path)
-
 import System.Directory
 import System.FilePath.Posix
 
@@ -24,7 +20,7 @@ cell :: String -> TableCell
 cell s = [Plain [Str s]]
 
 align :: Int -> [Alignment]
-align n = (take n) (repeat AlignDefault)
+align n = replicate n AlignDefault
 
 table :: [Inline] -> String -> Block
 table c t = Table c a w h r
@@ -34,8 +30,6 @@ table c t = Table c a w h r
     w = [] -- relative widths
 
     -- TODO is this safe?
-    --h = header f
-    --r = rows   f
     h = head f
     r = tail f
 
@@ -45,7 +39,7 @@ caption as = map Str $ maybeToList $ lookup "caption" as
 
 uri2path :: String -> FilePath
 uri2path uri
-  = concat $ intersperse [pathSeparator]
+  = intercalate [pathSeparator]
   $ filter (/= "")                        -- remove blanks
   $ filter (\s -> not $ isPrefixOf "_" s) -- remove _edit etc.
   $ splitOn [pathSeparator] uri
@@ -69,9 +63,9 @@ link2path lnk = do
   pfp <- askFile
   -- if it starts with "/", the link is relative to the repository
   -- otherwise, it's relative to the requested page
-  case isPrefixOf "/" lnk of
-    True  -> return $ joinPath [repositoryPath cfg, dropWhile (== '/') lnk]
-    False -> return $ joinPath [takeDirectory pfp, lnk]
+  return $ joinPath $ if "/" `isPrefixOf` lnk
+    then [repositoryPath cfg, dropWhile (== '/') lnk]
+    else [takeDirectory pfp, lnk]
 
 -- gets block attributes and body text, and
 -- reads a file to replace the text if needed
