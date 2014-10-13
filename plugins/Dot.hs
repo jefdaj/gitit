@@ -8,7 +8,7 @@ module Dot (plugin) where
 -- ~~~
 --
 -- The "dot" executable must be in the path.
--- The generated svg file will be cached in the static img directory.
+-- The generated svg file will be cached in the cache directory.
 -- A unique name will be generated from a hash of the file contents,
 -- prefixed with the 'name' attribute if one is given.
 
