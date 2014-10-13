@@ -4,12 +4,16 @@
 
 import sys
 
-print 'Hello from python!'
+print 'Hello from Python!'
 print '<br/>'
+
 print 'Your script recieved these args:'
 print '<br/>'
-print sys.argv
+print sys.argv[1:]
 print '<br/>'
+
 print 'And this text from stdin:'
 print '<br/>'
 print sys.stdin.read()
+print '<br/>'
+print '<br/>'

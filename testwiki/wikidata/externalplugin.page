@@ -5,6 +5,9 @@ title: External plugin
 Here are some tests of the "external" plugin,
 which lets you transform code blocks using arbitrary external programs.
 
+Evaluating code
+---------------
+
 This should run a bash script:
 
 ~~~ { .external bin="/bin/bash" fmt="plain" }
@@ -22,4 +25,19 @@ This should generate an error:
 
 ~~~ { .external bin="/bin/false" fmt="html"}
 this generates an error
+~~~
+
+Piping text through custom plugins
+----------------------------------
+
+~~~ { .pythonexample arg1="firstarg" arg2="secondarg" }
+this is stdin for the Python script
+~~~
+
+~~~ { .perlexample arg1="firstarg" arg2="secondarg" }
+this is stdin for the Perl script
+~~~
+
+~~~ { .rexample arg1="firstarg" arg2="secondarg" }
+this is stdin for the R script
 ~~~
