@@ -109,15 +109,9 @@ gitit_rebuild() {
   gitit_build $@ || return 1
 }
 
-<<<<<<< HEAD
-gitit_test() {
-  # run the test wiki using cabal exec
-  cmd='gitit --config-file testwiki.conf'
-=======
 gitit_serve() {
   # run the test wiki using cabal exec
   cmd='gitit +RTS -IO -RTS --config-file testwiki.conf'
->>>>>>> dev
   pkill -f "$cmd" # if there's an instance running, kill it first
   gitit_build || return 1
   prep_wiki
@@ -136,10 +130,6 @@ case "$main" in
   'build'  ) gitit_build   $@ ;;
   'rebuild') gitit_rebuild $@ ;;
   'repl'   ) gitit_repl    $@ ;;
-<<<<<<< HEAD
-  'test'   ) gitit_test    $@ ;;
-=======
   'serve'  ) gitit_serve    $@ ;;
->>>>>>> dev
   *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac
