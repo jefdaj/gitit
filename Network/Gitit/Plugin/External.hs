@@ -48,8 +48,8 @@ wrap "para" txt = Para  [Str txt]
 wrap _      txt = Plain [Str txt]
 
 
-mkArgs :: [String] -> [(String, [String])] -> [String]
-mkArgs ask usr = concat $ map flagify $ screen usr
+mkFlags :: [String] -> [(String, [String])] -> [String]
+mkFlags ask usr = concat $ map flagify $ screen usr
   where
     screen = filter (\(k,_) -> elem k ask)
     flagify (k, vs) = ("--" ++ k):vs
@@ -84,8 +84,10 @@ argList ask usr = do
       , ("static-dir"     , [canonicalFilePath configStatic   , defaultStatic   ])
       , ("templates-dir"  , [canonicalFilePath configTemplates, defaultTemplates])
       ]
-  -- TODO why did I think (ask ++ map fst usr) was a good idea?
-  return $ mkArgs ask $ concat [usrFlags, metaFlags, cfgFlags, reqFlags]
+    askedArgs = concat [usrFlags, metaFlags, cfgFlags, reqFlags]
+    adhocArgs = [a | a <- ask ++ map fst usr, not $ a `elem` ["bin", "fmt", "nfo"]]
+    finalArgs = mkFlags adhocArgs askedArgs
+  return finalArgs
 
 allArgs :: [String]
 allArgs =
@@ -96,9 +98,6 @@ allArgs =
   , "cache-dir"
   , "uri"
   ]
-
--- TODO add ask to the documentation
--- TODO remove other "external" plugin?
 
 {- This renders generic "external" codeblocks using whatever
  - command you want. The 'bin' attribute is required,
