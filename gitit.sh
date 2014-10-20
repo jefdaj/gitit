@@ -51,6 +51,7 @@ prep_repo() {
   cd "$GITITDIR"
   [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
+  cabal sandbox add-source pandoc
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
@@ -94,6 +95,7 @@ cabal_sandbox() {
 gitit_build() {
   # build gitit, but don't run it yet
   cd "$GITITDIR"
+  git submodule update --init --recursive
   prep_packages || exit 1
   cabal_sandbox install $@ || return 1
 
@@ -106,6 +108,7 @@ gitit_rebuild() {
   # delete the sandbox and run build again
   cd "$GITITDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
+  rm -rf pandoc
   gitit_build $@ || return 1
 }
 
