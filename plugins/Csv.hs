@@ -9,33 +9,24 @@ import Data.Maybe
 import Network.Gitit.Interface
 import System.Directory
 import System.FilePath.Posix
+import Text.CSV
+import Text.Printf
 
--- splits the raw csv into fields
--- TODO use Data.CSV to replace this
-fields :: String -> [[String]]
-fields s = map (splitOn ",") (lines s)
-
--- wraps a string in a tablecell
-cell :: String -> TableCell
-cell s = [Plain [Str s]]
-
-align :: Int -> [Alignment]
-align n = replicate n AlignDefault
-
-table :: [Inline] -> String -> Block
-table c t = Table c a w h r
+table :: String -> Block
+table txt = RawBlock (Format "html") (toTable $ fields $ txt)
   where
-    f = map (map cell) $ fields t
-    a = align $ length h
-    w = [] -- relative widths
+    fields = (map $ splitOn ",") . lines
 
-    -- TODO is this safe?
-    h = head f
-    r = tail f
+toTable :: [[String]] -> String
+toTable = wrap "table" unlines . wrap "tr" concat $ wrap "td" id id
 
+wrap :: String -> ([b] -> String) -> (a -> b) -> [a] -> String
+wrap tag combine f xs = printf "<%s>%s</%s>" tag (combine $ map f xs) tag
+
+-- TODO put captions back?
 -- extracts a caption from block attributes
-caption :: [(String, String)] -> [Inline]
-caption as = map Str $ maybeToList $ lookup "caption" as
+-- caption :: [(String, String)] -> [Inline]
+-- caption as = map Str $ maybeToList $ lookup "caption" as
 
 uri2path :: String -> FilePath
 uri2path uri
@@ -84,7 +75,6 @@ plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
-      cap <- return $ caption as
       bod <- body as txt
-      return $ table cap bod
+      return $ table bod
     tfm x = return x
