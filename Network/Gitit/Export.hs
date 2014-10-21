@@ -210,10 +210,6 @@ respondDocx = respondX "native"
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   "docx" writeDocx defaultRespOptions
 
--- TODO try to move the `fixURLs page old_pndc` part into
---      ContentTransformer.hs, then use applyPageTransforms on old_pndc
---      (except would that require pattern matching on function equality?)
---      ... if you can't figure it out, file a bug report!
 respondPDF :: Bool -> String -> Pandoc -> Handler
 respondPDF useBeamer page old_pndc = fixURLs page old_pndc >>= \pndc -> do
   cfg <- getConfig
