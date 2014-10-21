@@ -129,7 +129,7 @@ Library
     exposed-modules: Network.Gitit.Interface, Network.Gitit.Plugin.External
     build-depends:   ghc, ghc-paths
     cpp-options:     -D_PLUGINS
-  build-depends:     base >= 3, pandoc >= 1.12.4 && < 1.14,
+    build-depends:   base >= 3, pandoc >= 1.12.4 && < 1.14,
                      pandoc-types >= 1.12.3 && < 1.13, filepath, safe,
                      transformers, canonical-filepath
   extensions:        CPP

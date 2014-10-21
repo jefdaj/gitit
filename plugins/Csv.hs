@@ -1,41 +1,59 @@
 module Csv (plugin) where
 
+-- parts of this are based on:
+-- bonsaicode.wordpress.com/2013/01/15/programming-praxis-translate-csv-to-html
+
+-- TODO have and optional `class="header"` rather than pattern matching
 -- TODO make 'file' paths relative to repository-path when absolute
--- TODO and relative to repository-path/cleaned-up-uri if relpaths
+--      and relative to repository-path/cleaned-up-uri if relpaths
+-- TODO handle ragged spreadsheets?
 
 import Data.List
 import Data.List.Split
-import Data.Maybe
 import Network.Gitit.Interface
 import System.Directory
 import System.FilePath.Posix
 
--- splits the raw csv into fields
--- TODO use Data.CSV to replace this
-fields :: String -> [[String]]
-fields s = map (splitOn ",") (lines s)
+-----------------
+-- CSV to HTML --
+-----------------
 
--- wraps a string in a tablecell
-cell :: String -> TableCell
-cell s = [Plain [Str s]]
+row :: String -> String -> Maybe String -> String -> String
+row outer inner cls s = wrap outer cls
+                      $ concatMap (wrap inner Nothing)
+                      $ splitOn "," s
 
-align :: Int -> [Alignment]
-align n = replicate n AlignDefault
+tr :: String -> Maybe String -> String -> String
+tr = row "tr"
 
-table :: [Inline] -> String -> Block
-table c t = Table c a w h r
+thead :: String -> String
+thead s = wrap "thead" Nothing
+        $ tr "th" (Just "header") s
+
+tbody :: [String] -> String
+tbody ss = wrap "tbody" Nothing
+         $ concatMap (tr "td" Nothing) ss
+
+table :: String -> String
+table s = let t = wrap "table" Nothing
+          in case (lines s) of
+            []     -> tbody [""]
+            [l]    -> t $ tbody [tr "td" Nothing l]
+            (l:ls) -> t $ (thead l) ++ (tbody ls)
+
+-- takes a tag, an optional class, and text to wrap
+-- returns the text wrapped in the tag
+wrap :: String -> Maybe String -> String -> String
+wrap tag cls txt = "<" ++ tag ++ cls' ++ ">" ++ txt ++ "</" ++ tag ++ ">"
   where
-    f = map (map cell) $ fields t
-    a = align $ length h
-    w = [] -- relative widths
+    cls' = case cls of
+             Nothing -> ""
+             Just c  -> " class=\"" ++ c ++ "\" "
 
-    -- TODO is this safe?
-    h = head f
-    r = tail f
 
--- extracts a caption from block attributes
-caption :: [(String, String)] -> [Inline]
-caption as = map Str $ maybeToList $ lookup "caption" as
+-------------------------
+-- find and load files --
+-------------------------
 
 uri2path :: String -> FilePath
 uri2path uri
@@ -45,7 +63,6 @@ uri2path uri
   $ splitOn [pathSeparator] uri
 
 -- returns the path to the .page file associated with a request
--- TODO should it find stuff in the ghc data dir too?
 askFile :: PluginM FilePath
 askFile = do
   cfg <- askConfig
@@ -79,12 +96,16 @@ body as txt = case lookup "file" as of
       False -> return $ "file not found: " ++ p
       True  -> liftIO $ readFile p
 
+
+------------------
+-- gitit plugin --
+------------------
+
 plugin :: Plugin
-plugin = mkPageTransformM tfm
-  where
-    tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
-      cap <- return $ caption as
-      bod <- body as txt
-      return $ table cap bod
-    tfm x = return x
+plugin = mkPageTransformM blockTransform
+
+blockTransform :: Block -> PluginM Block
+blockTransform (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
+  bod <- body as txt
+  return $ RawBlock (Format "html") (table bod)
+blockTransform x = return x

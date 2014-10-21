@@ -4,3 +4,6 @@
 [submodule "filestore"]
 	path = filestore
 	url = https://github.com/jefdaj/filestore.git
+[submodule "pandoc"]
+	path = pandoc
+	url = https://github.com/jefdaj/pandoc.git

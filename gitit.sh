@@ -52,6 +52,7 @@ prep_repo() {
   [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
   cabal sandbox add-source filestore
+  cabal sandbox add-source pandoc
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
@@ -109,6 +110,7 @@ gitit_rebuild() {
   cd "$GITITDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
   rm -rf filestore
+  rm -rf pandoc
   gitit_build $@ || return 1
 }
 
