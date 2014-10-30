@@ -137,13 +137,13 @@ wiki conf = do
   let maxSize = fromIntegral $ maxUploadSize conf
   decodeBody $ defaultBodyPolicy tempDir maxSize maxSize maxSize
   let static = staticDir conf
-      cache  = cacheDir conf
+      cache  = cacheDir  conf
   defaultStatic <- liftIO $ getDataFileName $ "data" </> "static"
   -- if file not found in staticDir, we check also in the data/static
   -- directory, which contains defaults
   let staticHandler = withExpiresHeaders $
         serveDirectory' static `mplus` serveDirectory' defaultStatic
-      cacheHandler  = withExpiresHeaders $ serveDirectory' cache
+  let cacheHandler  = withExpiresHeaders $ serveDirectory' cache
   let debugHandler' = msum [debugHandler | debugMode conf]
   let handlers = debugHandler' `mplus` authHandler conf `mplus`
                  authenticate ForRead (msum wikiHandlers)
@@ -162,7 +162,7 @@ serveDirectory' p = do
   resp' <- serveDirectory EnableBrowsing [] p
   if rsCode resp' == 404 || lastNote "fileServeStrict'" (rqUri rq) == '/'
      then mzero  -- pass through if not found or directory index
-     else do
+     else
        -- turn off compresion filter unless it's text
        case getHeader "Content-Type" resp' of
             Just ct | B.pack "text/" `B.isPrefixOf` ct -> return resp'

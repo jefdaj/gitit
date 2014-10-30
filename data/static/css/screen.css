@@ -16,7 +16,7 @@ option { padding: 0 .4em; }
 table, tr, td, th { border: none; }
 hr { height: 1px; color: #aaa; background-color: #aaa; border: 0; margin: .2em 0 .2em 0; }
 
-h1, h2, h3, h4, h5, h6 { font-weight: normal; border-bottom: 1px solid black; }
+h1, h2, h3, h4, h5, h6 { font-weight: normal; border-bottom: 1px solid #aaa; }
 
 h1.pageTitle { font-size: 197%; margin: 0.2em 0 .5em; }
 
@@ -106,7 +106,8 @@ div#categoryList { padding: 0em; margin: 1em 0 0 0; border: 1px dashed #ccc; }
 .search_result { margin-bottom: 15px; }
 .search_result .match { margin-bottom: 15px; }
 
-code { font-size: 93%; }
+pre>code { display: block; padding: 0.7em 1em; }
+code { font-size: 93%; background-color: #f8f8f8; border: 1px solid #ddd; overflow: auto; border-radius: 0.2em; }
 pre.matches { margin: 0; padding: 0; }
 #pattern { background-color: yellow; font-weight: bold; }
 pre.matches span.highlighted { background-color: yellow; }

@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, StandaloneDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-
 Copyright (C) 2009 John MacFarlane <jgm@berkeley.edu>,
                    Henry Laxen <nadine.and.henry@pobox.com>
@@ -24,7 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 module Network.Gitit.Authentication ( loginUserForm
                                     , formAuthHandlers
                                     , httpAuthHandlers
-                                    , rpxAuthHandlers) where
+                                    , rpxAuthHandlers
+                                    , githubAuthHandlers) where
 
 import Network.Gitit.State
 import Network.Gitit.Types
@@ -32,19 +33,20 @@ import Network.Gitit.Framework
 import Network.Gitit.Layout
 import Network.Gitit.Server
 import Network.Gitit.Util
+import Network.Gitit.Authentication.Github
 import Network.Captcha.ReCaptcha (captchaFields, validateCaptcha)
 import Text.XHtml hiding ( (</>), dir, method, password, rev )
 import qualified Text.XHtml as X ( password )
 import System.Process (readProcessWithExitCode)
 import Control.Monad (unless, liftM, mplus)
-import Control.Monad.Trans (MonadIO(), liftIO)
+import Control.Monad.Trans (liftIO)
 import System.Exit
 import System.Log.Logger (logM, Priority(..))
-import Data.Char (isAlphaNum, isAlpha, isAscii)
+import Data.Char (isAlphaNum, isAlpha)
 import qualified Data.Map as M
 import Text.Pandoc.Shared (substitute)
 import Data.Maybe (isJust, fromJust, isNothing, fromMaybe)
-import Network.URL (encString, exportURL, add_param, importURL)
+import Network.URL (exportURL, add_param, importURL)
 import Network.BSD (getHostName)
 import qualified Text.StringTemplate as T
 import Network.HTTP (urlEncodeVars, urlDecode, urlEncode)
@@ -298,11 +300,8 @@ sharedValidation validationType params = do
                then return $ Left "missing-challenge-or-response"
                else liftIO $ do
                       mbIPaddr <- lookupIPAddr peer
-                      let ipaddr = case mbIPaddr of
-                                        Just ip -> ip
-                                        Nothing -> error $
-                                          "Could not find ip address for " ++
-                                          peer
+                      let ipaddr = fromMaybe (error $ "Could not find ip address for " ++ peer)
+                                   mbIPaddr
                       ipaddr `seq` validateCaptcha (recaptchaPrivateKey cfg)
                               ipaddr (recaptchaChallengeField recaptcha)
                               (recaptchaResponseField recaptcha)
@@ -379,14 +378,11 @@ loginUser params = do
   cfg <- getConfig
   if allowed
     then do
-      key <- newSession (SessionData uname)
+      key <- newSession (sessionData uname)
       addCookie (MaxAge $ sessionTimeout cfg) (mkCookie "sid" (show key))
       seeOther (encUrl destination) $ toResponse $ p << ("Welcome, " ++ uname)
     else
       withMessages ["Invalid username or password."] loginUserForm
-
-encUrl :: String -> String
-encUrl = encString True isAscii
 
 logoutUser :: Params -> Handler
 logoutUser params = do
@@ -434,8 +430,44 @@ logoutUserHTTP = unauthorized $ toResponse ()  -- will this work?
 
 httpAuthHandlers :: [Handler]
 httpAuthHandlers =
-  [ dir "_logout" $ logoutUserHTTP
+  [ dir "_logout" logoutUserHTTP
   , dir "_login"  $ withData loginUserHTTP
+  , dir "_user" currentUser ]
+
+oauthGithubCallback :: GithubConfig
+                   -> GithubCallbackPars                  -- ^ Authentication code gained after authorization
+                   -> Handler
+oauthGithubCallback ghConfig githubCallbackPars =
+  withData $ \(sk :: Maybe SessionKey) ->
+      do
+        mbSd <- maybe (return Nothing) getSession sk
+        mbGititState <- case mbSd of
+                          Nothing    -> return Nothing
+                          Just sd    -> return $ sessionGithubState sd
+        let gititState = fromMaybe (error "No Github state found in session (is it the same domain?)") mbGititState
+        mUser <- getGithubUser ghConfig githubCallbackPars gititState
+        base' <- getWikiBase
+        let destination = base' ++ "/"
+        case mUser of
+          Right user -> do
+                     let userEmail = uEmail user
+                     updateGititState $ \s -> s { users = M.insert userEmail user (users s) }
+                     addUser (uUsername user) user
+                     key <- newSession (sessionData userEmail)
+                     cfg <- getConfig
+                     addCookie (MaxAge $ sessionTimeout cfg) (mkCookie "sid" (show key))
+                     seeOther (encUrl destination) $ toResponse ()
+          Left err -> do
+              liftIO $ logM "gitit" WARNING $ "Login Failed: " ++ ghUserMessage err ++ maybe "" (". Github response" ++) (ghDetails err)
+              let url = destination ++ "?message=" ++ ghUserMessage err
+              seeOther (encUrl url) $ toResponse ()
+
+githubAuthHandlers :: GithubConfig
+                   -> [Handler]
+githubAuthHandlers ghConfig =
+  [ dir "_logout" $ withData logoutUser
+  , dir "_login" $ loginGithubUser $ oAuth2 ghConfig
+  , dir "_githubCallback" $ withData $ oauthGithubCallback ghConfig
   , dir "_user" currentUser ]
 
 -- Login using RPX (see RPX development docs at https://rpxnow.com/docs)
@@ -448,7 +480,7 @@ loginRPXUser params = do
   if isNothing mtoken
      then do
        let url = baseUrl cfg ++ "/_login?destination=" ++
-                  (fromMaybe ref $ rDestination params)
+                  fromMaybe ref (rDestination params)
        if null (rpxDomain cfg)
           then error "rpx-domain is not set."
           else do
@@ -471,7 +503,7 @@ loginRPXUser params = do
        let email  = prop "verifiedEmail" uid
        user <- liftIO $ mkUser (fromMaybe userId email) (fromMaybe "" email) "none"
        updateGititState $ \s -> s { users = M.insert userId user (users s) }
-       key <- newSession (SessionData userId)
+       key <- newSession (sessionData userId)
        addCookie (MaxAge $ sessionTimeout cfg) (mkCookie "sid" (show key))
        see $ fromJust $ rDestination params
       where

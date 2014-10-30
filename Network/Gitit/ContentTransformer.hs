@@ -69,7 +69,7 @@ module Network.Gitit.ContentTransformer
   )
 where
 
-import Control.Exception (throwIO, catch)
+import qualified Control.Exception as E
 import Control.Monad.State
 import Control.Monad.Reader (ask)
 import Data.Foldable (traverse_)
@@ -86,7 +86,6 @@ import Network.Gitit.Types
 import Network.HTTP (urlDecode)
 import Network.URI (isUnescapedInURI)
 import Network.URL (encString)
-import Prelude hiding (catch)
 import System.FilePath
 import qualified Text.Pandoc.Builder as B
 import Text.HTML.SanitizeXSS (sanitizeBalance)
@@ -274,8 +273,8 @@ rawContents = do
   file <- getFileName
   fs <- lift getFileStore
   let rev = pRevision params
-  liftIO $ catch (liftM Just $ FS.retrieve fs file rev)
-                 (\e -> if e == FS.NotFound then return Nothing else throwIO e)
+  liftIO $ E.catch (liftM Just $ FS.retrieve fs file rev)
+               (\e -> if e == FS.NotFound then return Nothing else E.throwIO e)
 
 --
 -- Response-generating combinators
@@ -442,7 +441,7 @@ handleRedirects page = case lookup "redirect" (pageMeta page) of
             let params = uriQueryItems uri
             redirect' <- lookup "redirect" params
             guard $ redirect' == "yes"
-            path' <- stripPrefix base' (uriPath uri)
+            path' <- stripPrefix (base' ++ "/") (uriPath uri)
             let path'' = if null path' then frontPage cfg else urlDecode path'
             guard $ isPage path''
             return path''
@@ -670,15 +669,18 @@ readerFor pt lhs =
                  , readerExtensions = if lhs
                                          then Set.insert Ext_literate_haskell
                                               $ readerExtensions def
-                                         else readerExtensions def }
+                                         else readerExtensions def
+                 , readerParseRaw = True
+                 }
   in case pt of
-       RST      -> readRST defPS
-       Markdown -> readMarkdown defPS
-       LaTeX    -> readLaTeX defPS
-       HTML     -> readHtml defPS
-       Textile  -> readTextile defPS
-       Org      -> readOrg defPS
-       DocBook  -> readDocBook defPS
+       RST        -> readRST defPS
+       Markdown   -> readMarkdown defPS
+       LaTeX      -> readLaTeX defPS
+       HTML       -> readHtml defPS
+       Textile    -> readTextile defPS
+       Org        -> readOrg defPS
+       DocBook    -> readDocBook defPS
+       MediaWiki  -> readMediaWiki defPS
 
 wikiLinksTransform :: Pandoc -> PluginM Pandoc
 wikiLinksTransform pandoc

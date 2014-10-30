@@ -3,82 +3,14 @@ format: Markdown
 title: testwiki
 ...
 
-Here are some code blocks.
-It's easiest to see what's going on if you click `edit`
-and compare source code to the output of `Preview`.
+This is the test wiki. Feel free to look at or mess with anything.
 
-Dot.hs
-------
+Here are some test pages for the plugins I'm writing:
 
-~~~{ .dot }
-digraph testdg {
-  a -> b;
-  a -> c;
-  b -> c;
-}
-~~~
+* [Csv](csvplugin)
+* [External](externalplugin)
+* [Files](filesplugin)
 
+And here are some general improvements:
 
-DepGraph.hs
------------
-
-~~~ { .depgraph mode="pages" width="300" }
-graphtest_1
-graphtest_2
-~~~
-
-
-~~~ { .depgraph mode="globs" width="300" }
-graph2/*
-~~~
-
-GlobList.hs
------------
-
-This should produce a list of page links:
-
-~~~{ .globlist }
-*graph*
-/testdir/*
-*
-~~~
-
-External.hs
------------
-
-~~~ { .external bin="/bin/sh" fmt="plain" }
-echo "hello from $0"
-~~~
-
-~~~ { .external bin="/usr/bin/python" fmt="para" }
-import sys
-print "hello from python", sys.version
-~~~
-
-~~~ { .external bin="/bin/false" fmt="html"}
-this generates an error
-~~~
-
-Csv.hs
-------
-
-~~~ { .csv }
-id,name,email
-1,Jeff Johnson, jefdaj@gmail.com
-~~~
-
-~~~ { .csv file="test2.csv" }
-this is a csv file by path relative to the page
-~~~
-
-~~~ { .csv file="testdir/test3.csv" }
-this is another one loaded path relative to the page
-~~~
-
-~~~ { .csv file="/test2.csv" }
-this is a csv file by path relative to the repo
-~~~
-
-~~~ { .csv file="/testdir/test3.csv" }
-this is another one loaded path relative to the repo
-~~~
+* [Symlink handling](symlinks)

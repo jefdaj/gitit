@@ -1,18 +1,18 @@
-# editor temp files
-*.sw*
-*.~*
-
-# cabal temp files
-.cabal-sandbox
-build
 cabal.sandbox.config
+TAGS
 dist
+wikidata
+templates
+static/
+gitit.log
+my.conf
+gitit-users
+.cabal-sandbox
+github.conf
 
-# compiled files
+# temp files
+*.sw*
+
+# haskell files
 *.hi
 *.o
-*.pyc
-
-# test wiki
-testwiki/*.log
-testwiki/wikidata/.git

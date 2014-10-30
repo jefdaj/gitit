@@ -21,25 +21,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
 module Network.Gitit.Config ( getConfigFromFile
+                            , getConfigFromFiles
                             , getDefaultConfig
                             , readMimeTypesFile )
 where
 import Network.Gitit.Types
 import Network.Gitit.Server (mimeTypes)
 import Network.Gitit.Framework
-import Network.Gitit.Authentication (formAuthHandlers, rpxAuthHandlers, httpAuthHandlers)
+import Network.Gitit.Authentication (formAuthHandlers, rpxAuthHandlers, httpAuthHandlers, githubAuthHandlers)
 import Network.Gitit.Util (parsePageType, readFileUTF8)
 import System.Log.Logger (logM, Priority(..))
 import qualified Data.Map as M
 import Data.ConfigFile hiding (readfile)
-import Control.Monad.Error
-import System.Log.Logger ()
 import Data.List (intercalate)
 import Data.Char (toLower, toUpper, isDigit)
+import Data.Text (pack)
 import Paths_gitit (getDataFileName)
 import System.FilePath ((</>))
 import Text.Pandoc hiding (MathML, WebTeX, MathJax)
 import qualified Control.Exception as E
+import Network.OAuth.OAuth2
+import qualified Data.ByteString.Char8 as BS
+import Network.Gitit.Compat.Except
+import Control.Monad
+import Control.Monad.Trans
 
 forceEither :: Show e => Either e a -> a
 forceEither = either (error . show) id
@@ -49,6 +54,20 @@ getConfigFromFile :: FilePath -> IO Config
 getConfigFromFile fname = do
   cp <- getDefaultConfigParser
   readfile cp fname >>= extractConfig . forceEither
+
+-- | Get configuration from config files.
+getConfigFromFiles :: [FilePath] -> IO Config
+getConfigFromFiles fnames = do
+  config <- getConfigParserFromFiles fnames
+  extractConfig config
+
+getConfigParserFromFiles :: [FilePath] ->
+                            IO ConfigParser
+getConfigParserFromFiles (fname:fnames) = do
+  cp <- getConfigParserFromFiles fnames
+  config <- readfile cp fname
+  return $ forceEither config
+getConfigParserFromFiles [] = getDefaultConfigParser
 
 -- | A version of readfile that treats the file as UTF-8.
 readfile :: MonadError CPError m
@@ -61,7 +80,7 @@ readfile cp path' = do
 
 extractConfig :: ConfigParser -> IO Config
 extractConfig cp = do
-  config' <- runErrorT $ do
+  config' <- runExceptT $ do
       cfRepositoryType <- get cp "DEFAULT" "repository-type"
       cfRepositoryPath <- get cp "DEFAULT" "repository-path"
       cfDefaultPageType <- get cp "DEFAULT" "default-page-type"
@@ -126,9 +145,10 @@ extractConfig cp = do
                         "mercurial" -> Mercurial
                         x           -> error $ "Unknown repository type: " ++ x
       when (authMethod == "rpx" && cfRPXDomain == "") $
-         liftIO $ logM "gitit" WARNING $ "rpx-domain is not set"
+         liftIO $ logM "gitit" WARNING "rpx-domain is not set"
+      ghConfig <- extractGithubConfig cp
 
-      return $! Config{
+      return Config{
           repositoryPath       = cfRepositoryPath
         , repositoryType       = repotype'
         , defaultPageType      = pt
@@ -142,6 +162,7 @@ extractConfig cp = do
         , showLHSBirdTracks    = cfShowLHSBirdTracks
         , withUser             = case authMethod of
                                       "form"     -> withUserFromSession
+                                      "github"   -> withUserFromSession
                                       "http"     -> withUserFromHTTPAuth
                                       "rpx"      -> withUserFromSession
                                       _          -> id
@@ -153,6 +174,7 @@ extractConfig cp = do
 
         , authHandler          = case authMethod of
                                       "form"     -> msum formAuthHandlers
+                                      "github"   -> msum $ githubAuthHandlers ghConfig
                                       "http"     -> msum httpAuthHandlers
                                       "rpx"      -> msum rpxAuthHandlers
                                       _          -> mzero
@@ -206,11 +228,33 @@ extractConfig cp = do
                                     else Just cfPandocUserData
         , xssSanitize          = cfXssSanitize
         , recentActivityDays   = cfRecentActivityDays
+        , githubAuth           = ghConfig
         }
   case config' of
         Left (ParseError e, e') -> error $ "Parse error: " ++ e ++ "\n" ++ e'
         Left e                  -> error (show e)
         Right c                 -> return c
+
+extractGithubConfig ::  (Functor m, MonadError CPError m) => ConfigParser
+                    -> m GithubConfig
+extractGithubConfig cp = do
+      cfOauthClientId <- getGithubProp "oauthClientId"
+      cfOauthClientSecret <- getGithubProp "oauthClientSecret"
+      cfOauthCallback <- getGithubProp "oauthCallback"
+      cfOauthOAuthorizeEndpoint  <- getGithubProp "oauthOAuthorizeEndpoint"
+      cfOauthAccessTokenEndpoint <- getGithubProp "oauthAccessTokenEndpoint"
+      cfOrg <- if hasGithubProp "github-org"
+                 then fmap Just (getGithubProp "github-org")
+                 else return Nothing
+      let cfgOAuth2 = OAuth2 { oauthClientId =  BS.pack cfOauthClientId
+                          , oauthClientSecret =  BS.pack cfOauthClientSecret
+                          , oauthCallback = Just $ BS.pack cfOauthCallback
+                          , oauthOAuthorizeEndpoint = BS.pack cfOauthOAuthorizeEndpoint
+                          , oauthAccessTokenEndpoint = BS.pack cfOauthAccessTokenEndpoint
+                          }
+      return $ githubConfig cfgOAuth2 $ fmap pack cfOrg
+  where getGithubProp = get cp "Github"
+        hasGithubProp = has_option cp "Github"
 
 fromQuotedMultiline :: String -> String
 fromQuotedMultiline = unlines . map doline . lines . dropWhile (`elem` " \t\n")
@@ -258,10 +302,10 @@ getDefaultConfig = getDefaultConfigParser >>= extractConfig
 -- extensions, separated by spaces. Example: text/plain txt text
 readMimeTypesFile :: FilePath -> IO (M.Map String String)
 readMimeTypesFile f = E.catch
-  (liftM (foldr go M.empty . map words . lines) $ readFileUTF8 f)
+  (liftM (foldr (go . words)  M.empty . lines) $ readFileUTF8 f)
   handleMimeTypesFileNotFound
      where go []     m = m  -- skip blank lines
-           go (x:xs) m = foldr (\ext -> M.insert ext x) m xs
+           go (x:xs) m = foldr (`M.insert` x) m xs
            handleMimeTypesFileNotFound (e :: E.SomeException) = do
              logM "gitit" WARNING $ "Could not read mime types file: " ++
                f ++ "\n" ++ show e ++ "\n" ++ "Using defaults instead."

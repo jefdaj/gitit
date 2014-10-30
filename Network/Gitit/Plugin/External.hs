@@ -14,8 +14,9 @@ import Data.Maybe
 import Network.Gitit.Interface
 import System.Exit
 import System.FilePath
+import System.FilePath.Canonical
 import System.Process
--- import Paths_gitit (getDataFileName)
+import Paths_gitit (getDataFileName)
 
 {- Passes text to an external script as stdin
  - and returns with the script's stdout
@@ -25,16 +26,15 @@ eval :: FilePath -> [String] -> String -> IO String
 eval "" _ _ = return "ERROR: missing 'bin' attribute"
 eval bin args txt = do
   (code, out, err) <- readProcessWithExitCode bin args txt
-  if code == ExitSuccess
-    then return out
-    else return $ unlines
-      [ "ERROR:  " ++ (show bin) ++ " returned " ++ (show code)
-      , "args:   " ++ (show args)
-      , "stdin:  " ++ (show txt)
-      , "stdout: " ++ (show out)
-      , "stderr: " ++ (show err)
+  return $ if code == ExitSuccess
+    then out
+    else unlines
+      [ "ERROR:  " ++ show bin ++ " returned " ++ show code
+      , "args:   " ++ show args
+      , "stdin:  " ++ show txt
+      , "stdout: " ++ show out
+      , "stderr: " ++ show err
       ]
-
 
 {- Takes a format string and some text, and
  - wraps the text in the corresponding Pandoc Block
@@ -46,32 +46,45 @@ wrap "list" txt = BulletList [map (\s -> Plain [Str s]) $ lines txt]
 wrap "para" txt = Para  [Str txt]
 wrap _      txt = Plain [Str txt]
 
-
-mkArgs :: [String] -> [(String, String)] -> [String]
-mkArgs ok usr = concat $ map flagify $ screen usr
+mkFlags :: [String] -> [(String, [String])] -> [String]
+mkFlags ask usr = concatMap flagify $ screen usr
   where
-    screen = filter (\(k,_) -> elem k ok)
-    flagify (k, v) = ["--" ++ k, v]
-
+    screen = filter (\(k,_) -> elem k ask)
+    flagify (k, vs) = ("--" ++ k):vs
 
 -- asks for the plugin data available from gitit and
 -- formats it as command line args for external scripts
--- also takes a predicate for filtering which args to use
+-- also takes a predicate for filtering which optional args to pass
+-- TODO clean this up and de-duplicate
 argList :: [String] -> [(String, String)] -> PluginM [String]
 argList ask usr = do
   c <- askConfig
   m <- askMeta
   r <- askRequest
-  return $ mkArgs (ask ++ map fst usr) $ concat [usr, m, cfgFlags c, reqFlags r]
-  where
-    reqFlags r = [("uri", rqUri r)]
-    cfgFlags c =
-      [ ("repository-path", repositoryPath c)
-      , ("templates-dir"  , templatesDir   c)
-      , ("static-dir"     , staticDir      c)
-      , ("plugin-dir"     , pluginDir      c)
-      , ("cache-dir"      , cacheDir       c)
+  configPlugins    <- liftIO $ canonical $ pluginDir      c
+  configStatic     <- liftIO $ canonical $ staticDir      c
+  configTemplates  <- liftIO $ canonical $ templatesDir   c
+  configCache      <- liftIO $ canonical $ cacheDir       c
+  configRepository <- liftIO $ canonical $ repositoryPath c
+  defaultPlugins   <- liftIO $ getDataFileName "plugins"
+  defaultStatic    <- liftIO $ getDataFileName $ "data" </> "static"
+  defaultTemplates <- liftIO $ getDataFileName $ "data" </> "templates"
+  let
+    sndSingletons = map (\(k,v) -> (k,[v]))
+    usrFlags  = sndSingletons usr
+    metaFlags = sndSingletons m
+    reqFlags  = [("uri", [rqUri r])]
+    cfgFlags  =
+      [ ("cache-dir"      , [canonicalFilePath configCache                      ])
+      , ("repository-path", [canonicalFilePath configRepository                 ])
+      , ("plugin-dir"     , [canonicalFilePath configPlugins  , defaultPlugins  ])
+      , ("static-dir"     , [canonicalFilePath configStatic   , defaultStatic   ])
+      , ("templates-dir"  , [canonicalFilePath configTemplates, defaultTemplates])
       ]
+    askedArgs = concat [usrFlags, metaFlags, cfgFlags, reqFlags]
+    adhocArgs = [a | a <- ask ++ map fst usr, a `notElem` ["bin", "fmt", "nfo"]]
+    finalArgs = mkFlags adhocArgs askedArgs
+  return finalArgs
 
 allArgs :: [String]
 allArgs =
@@ -82,9 +95,6 @@ allArgs =
   , "cache-dir"
   , "uri"
   ]
-
--- TODO add ask to the documentation
--- TODO remove other "external" plugin?
 
 {- This renders generic "external" codeblocks using whatever
  - command you want. The 'bin' attribute is required,
@@ -118,10 +128,10 @@ plugin :: Plugin
 plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | elem "external" cs = do
+    tfm (CodeBlock (_, cs, as) txt) | "external" `elem` cs = do
       let bin = fromMaybe "" $ lookup "bin" as
           fmt = fromMaybe "" $ lookup "fmt" as
-          nfo = fromMaybe "" $ lookup "nfo" as
+          nfo = fromMaybe "" $ lookup "nfo" as -- TODO rename nfo to ask?
       args <- argList (words nfo) as
       bin' <- findBinary bin
       out  <- liftIO $ eval bin' args txt
@@ -131,16 +141,15 @@ plugin = mkPageTransformM tfm
 -- TODO get this to work with plugins in the ghc data dir too?
 -- TODO and in whatever logic parses the config file
 findBinary :: FilePath -> PluginM FilePath
-findBinary b = case isPrefixOf "/" b of
-                True  -> return b
-                False -> do
+findBinary b = if "/" `isPrefixOf` b
+                then return b
+                else do
                   cfg <- askConfig
                   return $ pluginDir cfg </> b
 
-
 {- This lets you build custom external plugins
  - to handle specific block classes. That way you don't
- - have to write the 'bin' over and over. 
+ - have to write the 'bin' over and over.
  - It works the same way as above except you're
  - hard-coding the attributes.
  -
@@ -162,9 +171,8 @@ mkPlugin :: String -> String -> FilePath -> [String] -> Plugin
 mkPlugin cls fmt bin ask = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | elem cls cs = do
+    tfm (CodeBlock (_, cs, as) txt) | cls `elem` cs = do
       args <- argList ask as
-      -- name <- liftIO $ getDataFileName bin
       name <- findBinary bin
       out  <- liftIO $ eval name args txt
       return $ wrap fmt out
@@ -175,7 +183,7 @@ mkPlugin cls fmt bin ask = mkPageTransformM tfm
 
 uri2path :: String -> FilePath
 uri2path uri
-  = concat $ intersperse [pathSeparator]
+  = intercalate [pathSeparator]
   $ filter (/= "")                        -- remove blanks
   $ filter (\s -> not $ isPrefixOf "_" s) -- remove _edit etc.
   $ splitOn [pathSeparator] uri
@@ -199,6 +207,6 @@ link2path lnk = do
   pfp <- askFile
   -- if it starts with "/", the link is relative to the repository
   -- otherwise, it's relative to the requested page
-  case isPrefixOf "/" lnk of
-    True  -> return $ joinPath [repositoryPath cfg, dropWhile (== '/') lnk]
-    False -> return $ joinPath [takeDirectory pfp, lnk]
+  return $ joinPath $ if "/" `isPrefixOf` lnk
+    then [repositoryPath cfg, dropWhile (== '/') lnk]
+    else [takeDirectory pfp, lnk]

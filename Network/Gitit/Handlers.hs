@@ -50,6 +50,7 @@ module Network.Gitit.Handlers (
                       , showHighlightedSource
                       , expireCache
                       , feedHandler
+                      , fileListToHtmlNoUplink
                       )
 where
 import Safe
@@ -63,9 +64,8 @@ import Network.Gitit.Cache (expireCachedFile, lookupCache, cacheContents)
 import Network.Gitit.ContentTransformer (showRawPage, showFileAsText, showPage,
         exportPage, showHighlightedSource, preview, applyPreCommitPlugins)
 import Network.Gitit.Page (readCategories)
-import Control.Exception (throwIO, catch, try)
+import qualified Control.Exception as E
 import System.FilePath
-import Prelude hiding (catch)
 import Network.Gitit.State
 import Text.XHtml hiding ( (</>), dir, method, password, rev )
 import qualified Text.XHtml as X ( method )
@@ -84,13 +84,14 @@ import Data.FileStore
 import System.Log.Logger (logM, Priority(..))
 
 handleAny :: Handler
-handleAny = uriRest $ \uri ->
+handleAny = withData $ \(params :: Params) -> uriRest $ \uri ->
   let path' = uriPath uri
   in  do fs <- getFileStore
+         let rev = pRevision params
          mimetype <- getMimeTypeForExtension
                       (takeExtension path')
-         res <- liftIO $ try
-                (retrieve fs path' Nothing :: IO B.ByteString)
+         res <- liftIO $ E.try
+                (retrieve fs path' rev :: IO B.ByteString)
          case res of
                 Right contents -> ignoreFilters >>  -- don't compress
                                   (ok $ setContentType mimetype $
@@ -200,11 +201,11 @@ uploadFile = withData $ \(params :: Params) -> do
                         Just u  -> return (uUsername u, uEmail u)
   let overwrite = pOverwrite params
   fs <- getFileStore
-  exists <- liftIO $ catch (latest fs wikiname >> return True) $ \e ->
+  exists <- liftIO $ E.catch (latest fs wikiname >> return True) $ \e ->
                       if e == NotFound
                          then return False
-                         else throwIO e >> return True
-  let inCacheDir = cacheDir cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
+                         else E.throwIO e >> return True
+  let inCacheDir  = cacheDir  cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let inStaticDir = staticDir cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let inTemplatesDir = templatesDir cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let dirs' = splitDirectories $ takeDirectory wikiname
@@ -273,7 +274,7 @@ searchResults = withData $ \(params :: Params) -> do
   fs <- getFileStore
   matchLines <- if null patterns
                    then return []
-                   else liftIO $ catch (search fs SearchQuery{
+                   else liftIO $ E.catch (search fs SearchQuery{
                                                   queryPatterns = patterns
                                                 , queryWholeWords = True
                                                 , queryMatchAll = True
@@ -408,8 +409,8 @@ showActivity = withData $ \(params :: Params) -> do
 
   base' <- getWikiBase
   let fileAnchor revis file = if isPageFile file
-        then anchor ! [href $ base' ++ "/_diff" ++ urlForPage file ++ "?to=" ++ revis] << dropExtension file
-        else anchor ! [href $ base' ++ urlForPage file ] << file
+        then anchor ! [href $ base' ++ "/_diff" ++ urlForPage (dropExtension file) ++ "?to=" ++ revis] << dropExtension file
+        else anchor ! [href $ base' ++ urlForPage file ++ "?revision=" ++ revis] << file
   let filesFor changes revis = intersperse (stringToHtml " ") $
         map (fileAnchor revis . fileFromChange) changes
   let heading = h1 << ("Recent changes by " ++ fromMaybe "all users" forUser)
@@ -466,10 +467,10 @@ showDiff file page params = do
                             -- immediately preceding revision
                             then Just $ revId $ upto !! 1
                             else Nothing
-  result' <- liftIO $ try $ getDiff fs file from' to
+  result' <- liftIO $ E.try $ getDiff fs file from' to
   case result' of
        Left NotFound  -> mzero
-       Left e         -> liftIO $ throwIO e
+       Left e         -> liftIO $ E.throwIO e
        Right htmlDiff -> formattedPage defaultPageLayout{
                                           pgPageName = page,
                                           pgRevision = from' `mplus` to,
@@ -501,7 +502,7 @@ editPage' params = do
   let rev = pRevision params  -- if this is set, we're doing a revert
   fs <- getFileStore
   page <- getPage
-  let getRevisionAndText = catch
+  let getRevisionAndText = E.catch
         (do c <- liftIO $ retrieve fs (pathForPage page) rev
             -- even if pRevision is set, we return revId of latest
             -- saved version (because we're doing a revert and
@@ -511,7 +512,7 @@ editPage' params = do
             return (Just $ revId r, c))
         (\e -> if e == NotFound
                   then return (Nothing, "")
-                  else throwIO e)
+                  else E.throwIO e)
   (mbRev, raw) <- case pEditedText params of
                          Nothing -> liftIO getRevisionAndText
                          Just t  -> let r = if null (pSHA1 params)
@@ -574,11 +575,11 @@ confirmDelete = do
   fs <- getFileStore
   -- determine whether there is a corresponding page, and if not whether there
   -- is a corresponding file
-  pageTest <- liftIO $ try $ latest fs (pathForPage page)
+  pageTest <- liftIO $ E.try $ latest fs (pathForPage page)
   fileToDelete <- case pageTest of
                        Right _        -> return $ pathForPage page  -- a page
                        Left  NotFound -> do
-                         fileTest <- liftIO $ try $ latest fs page
+                         fileTest <- liftIO $ E.try $ latest fs page
                          case fileTest of
                               Right _       -> return page  -- a source file
                               Left NotFound -> return ""
@@ -643,12 +644,12 @@ updatePage = withData $ \(params :: Params) -> do
                                      return (Right ())
                        else do
                          expireCachedFile (pathForPage page) `mplus` return ()
-                         liftIO $ catch (modify fs (pathForPage page)
+                         liftIO $ E.catch (modify fs (pathForPage page)
                                             oldSHA1 (Author user email) logMsg
                                             editedText)
                                      (\e -> if e == Unchanged
                                                then return (Right ())
-                                               else throwIO e)
+                                               else E.throwIO e)
        case modifyRes of
             Right () -> seeOther (base' ++ urlForPage page) $ toResponse $ p << "Page updated"
             Left (MergeInfo mergedWithRev conflicts mergedText) -> do
@@ -682,7 +683,13 @@ indexPage = do
                   pgTitle = "Contents"} htmlIndex
 
 fileListToHtml :: String -> String -> [Resource] -> Html
-fileListToHtml base' prefix files =
+fileListToHtml = fileListToHtmlOptionalUplink True
+
+fileListToHtmlNoUplink :: String -> String -> [Resource] -> Html
+fileListToHtmlNoUplink = fileListToHtmlOptionalUplink False
+
+fileListToHtmlOptionalUplink :: Bool -> String -> String -> [Resource] -> Html
+fileListToHtmlOptionalUplink withUplink base' prefix files =
   let fileLink (FSFile f) | isPageFile f =
         li ! [theclass "page"  ] <<
           anchor ! [href $ base' ++ urlForPage (prefix ++ dropExtension f)] <<
@@ -702,7 +709,10 @@ fileListToHtml base' prefix files =
                                                    else base' ++
                                                         urlForPage (joinPath $ drop 1 d)] <<
                   lastNote "fileListToHtml" d, accum]) noHtml updirs
-  in uplink +++ ulist ! [theclass "index"] << map fileLink files
+      fileLinks = ulist ! [theclass "index"] << map fileLink files
+  in case withUplink of
+       True  -> uplink +++ fileLinks
+       False -> fileLinks
 
 -- NOTE:  The current implementation of categoryPage does not go via the
 -- filestore abstraction.  That is bad, but can only be fixed if we add

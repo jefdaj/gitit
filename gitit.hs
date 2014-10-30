@@ -24,7 +24,7 @@ import Network.Gitit.Server
 import Network.Gitit.Util (readFileUTF8)
 import System.Directory
 import Data.Maybe (isNothing)
-import Control.Monad.Error()
+import Network.Gitit.Compat.Except()
 import Control.Monad.Reader
 import System.Log.Logger (Priority(..), setLevel, setHandlers,
         getLogger, saveGlobalLogger)
@@ -54,12 +54,11 @@ main = do
         putErr ExitSuccess (progname ++ " version " ++
             showVersion version ++ compileInfo ++ copyrightMessage)
     Left PrintDefaultConfig -> getDataFileName "data/default.conf" >>=
-        readFileUTF8 >>= B.putStrLn . fromString >> exitWith ExitSuccess
+        readFileUTF8 >>= B.putStrLn . fromString >> exitSuccess
     Right xs -> return xs
 
   conf' <- case [f | ConfigFile f <- opts] of
-                (x:_) -> getConfigFromFile x
-                []    -> getDefaultConfig
+                fs -> getConfigFromFiles fs
 
   let conf = foldl handleFlag conf' opts
 
@@ -140,7 +139,7 @@ flags =
    ]
 
 parseArgs :: [String] -> IO [Opt]
-parseArgs argv = do
+parseArgs argv =
   case getOpt Permute flags argv of
     (opts,_,[])  -> return opts
     (_,_,errs)   -> putErr (ExitFailure 1) . (concat errs ++) =<< usageMessage

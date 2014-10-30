@@ -1,0 +1,28 @@
+---
+title: Files plugin
+...
+
+This should show a list of files in the same folder as this page
+which have `main` but not `swp` in their filenames:
+
+~~~{ .files }
++ main
+- swp
+~~~
+
+
+And this should show files in the `dir1` folder with `txt` in their names
+in reverse alphabetical order:
+
+~~~{ .files dir="dir1" sort="reverse" }
++ txt
++ bob
+~~~
+
+This should show the one dir inside `dir1` which also has `dir` in its name,
+but not `dir3`:
+
+~~~{ .files dir="dir1" }
++ dir
+- dir3
+~~~

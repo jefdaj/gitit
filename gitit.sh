@@ -25,8 +25,8 @@ CABALTMP="$CABALDIR/tmp"
 prep_packages() {
   # try to install system dependencies,
   # and warn if it doesn't work
-  bins=(ghc cabal python pip dot pdflatex)
-  pkgs=(haskell-platform haskell-platform python python-pip graphviz texlive)
+  bins=(ghc cabal dot pdflatex)
+  pkgs=(haskell-platform haskell-platform graphviz texlive)
   for n in "${!bins[@]}"; do
     b=${bins[$n]}
     p=${pkgs[$n]}
@@ -47,42 +47,12 @@ prep_packages() {
   done
 }
 
-prep_modules() {
-  # try to install python dependencies,
-  # and warn if it doesn't work
-  imps=(argparse BeautifulSoup pyparsing PIL    pydot pystache)
-  mods=(argparse BeautifulSoup pyparsing pillow pydot pystache)
-  for n in "${!imps[@]}"; do
-    i=${imps[$n]}
-    m=${mods[$n]}
-    python -c "import $i"
-    if [ $? -ne 0 ]; then
-      sudo pip install $m --upgrade
-      python -c "import $i"
-      if [ $? -ne 0 ]; then
-        read -p "WARNING! Couldn't import '$i' in python. Continue anyway? (y/n) " a
-        case "$a" in
-          y) continue ;;
-          *) exit 1   ;;
-        esac
-      else
-        echo "found python import $i"
-      fi
-    else
-      echo "found python import $i"
-    fi
-  done
-}
-
-prep_deps() {
-  prep_packages || exit 1
-  prep_modules  || exit 1
-}
-
 prep_repo() {
   cd "$GITITDIR"
   [[ -d "$CABALDIR" ]] || cabal update
   cabal sandbox init
+  cabal sandbox add-source filestore
+  cabal sandbox add-source pandoc
   [[ -d "$CABALTMP" ]] || mkdir "$CABALTMP"
 }
 
@@ -126,7 +96,8 @@ cabal_sandbox() {
 gitit_build() {
   # build gitit, but don't run it yet
   cd "$GITITDIR"
-  prep_deps || exit 1
+  git submodule update --init --recursive
+  prep_packages || exit 1
   cabal_sandbox install $@ || return 1
 
   # TODO there's got to be a better way right?
@@ -138,12 +109,14 @@ gitit_rebuild() {
   # delete the sandbox and run build again
   cd "$GITITDIR"
   rm -rf .cabal-sandbox cabal.sandbox.config
+  rm -rf filestore
+  rm -rf pandoc
   gitit_build $@ || return 1
 }
 
-gitit_test() {
+gitit_serve() {
   # run the test wiki using cabal exec
-  cmd='gitit --config-file testwiki.conf'
+  cmd='gitit +RTS -IO -RTS --config-file testwiki.conf'
   pkill -f "$cmd" # if there's an instance running, kill it first
   gitit_build || return 1
   prep_wiki
@@ -162,6 +135,6 @@ case "$main" in
   'build'  ) gitit_build   $@ ;;
   'rebuild') gitit_rebuild $@ ;;
   'repl'   ) gitit_repl    $@ ;;
-  'test'   ) gitit_test    $@ ;;
+  'serve'  ) gitit_serve    $@ ;;
   *) echo "$0 doesn't handle '$arg'" && exit 1 ;;
 esac
