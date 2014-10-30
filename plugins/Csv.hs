@@ -8,8 +8,10 @@ module Csv (plugin) where
 --      and relative to repository-path/cleaned-up-uri if relpaths
 -- TODO handle ragged spreadsheets?
 
+import Data.Char (readLitChar)
 import Data.List
 import Data.List.Split
+import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
 import System.Directory
 import System.FilePath.Posix
@@ -18,28 +20,28 @@ import System.FilePath.Posix
 -- CSV to HTML --
 -----------------
 
-row :: String -> String -> Maybe String -> String -> String
-row outer inner cls s = wrap outer cls
+row :: Char -> String -> String -> Maybe String -> String -> String
+row sep outer inner cls s = wrap outer cls
                       $ concatMap (wrap inner Nothing)
-                      $ splitOn "," s
+                      $ splitOn [sep] s
 
-tr :: String -> Maybe String -> String -> String
-tr = row "tr"
+tr :: Char -> String -> Maybe String -> String -> String
+tr sep = row sep "tr"
 
-thead :: String -> String
-thead s = wrap "thead" Nothing
-        $ tr "th" (Just "header") s
+thead :: Char -> String -> String
+thead sep s = wrap "thead" Nothing
+        $ tr sep "th" (Just "header") s
 
-tbody :: [String] -> String
-tbody ss = wrap "tbody" Nothing
-         $ concatMap (tr "td" Nothing) ss
+tbody :: Char -> [String] -> String
+tbody sep ss = wrap "tbody" Nothing
+         $ concatMap (tr sep "td" Nothing) ss
 
-table :: String -> String
-table s = let t = wrap "table" Nothing
+table :: Char -> String -> String
+table sep s = let t = wrap "table" Nothing
           in case (lines s) of
-            []     -> tbody [""]
-            [l]    -> t $ tbody [tr "td" Nothing l]
-            (l:ls) -> t $ (thead l) ++ (tbody ls)
+            []     -> tbody sep [""]
+            [l]    -> t $ tbody sep [tr sep "td" Nothing l]
+            (l:ls) -> t $ (thead sep l) ++ (tbody sep ls)
 
 -- takes a tag, an optional class, and text to wrap
 -- returns the text wrapped in the tag
@@ -107,5 +109,6 @@ plugin = mkPageTransformM blockTransform
 blockTransform :: Block -> PluginM Block
 blockTransform (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
   bod <- body as txt
-  return $ RawBlock (Format "html") (table bod)
+  let sep = fst $ head $ readLitChar $ fromMaybe "," $ lookup "sep" as
+  return $ RawBlock (Format "html") (table sep bod)
 blockTransform x = return x
