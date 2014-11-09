@@ -10,3 +10,7 @@ Here are some test pages for the plugins I'm writing:
 * [Csv](csvplugin)
 * [External](externalplugin)
 * [Files](filesplugin)
+
+And here are some general improvements:
+
+* [Symlink handling](symlinks)
