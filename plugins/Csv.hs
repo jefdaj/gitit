@@ -3,7 +3,6 @@ module Csv (plugin) where
 -- parts of this are based on:
 -- bonsaicode.wordpress.com/2013/01/15/programming-praxis-translate-csv-to-html
 
--- TODO have and optional `class="header"` rather than pattern matching
 -- TODO make 'file' paths relative to repository-path when absolute
 --      and relative to repository-path/cleaned-up-uri if relpaths
 -- TODO handle ragged spreadsheets?
@@ -36,12 +35,14 @@ tbody :: Char -> [String] -> String
 tbody sep ss = wrap "tbody" Nothing
          $ concatMap (tr sep "td" Nothing) ss
 
-table :: Char -> String -> String
-table sep s = let t = wrap "table" Nothing
+table :: Char -> Bool -> String -> String
+table sep hdr s = let t = wrap "table" Nothing
           in case (lines s) of
             []     -> tbody sep [""]
             [l]    -> t $ tbody sep [tr sep "td" Nothing l]
-            (l:ls) -> t $ (thead sep l) ++ (tbody sep ls)
+            a@(l:ls) -> t $
+              if hdr then ((thead sep l) ++ (tbody sep ls))
+                     else  (tbody sep a)
 
 -- takes a tag, an optional class, and text to wrap
 -- returns the text wrapped in the tag
@@ -110,5 +111,6 @@ blockTransform :: Block -> PluginM Block
 blockTransform (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
   bod <- body as txt
   let sep = fst $ head $ readLitChar $ fromMaybe "," $ lookup "sep" as
-  return $ RawBlock (Format "html") (table sep bod)
+      hdr = (fromMaybe "true" $ lookup "header" as) == "true"
+  return $ RawBlock (Format "html") (table sep hdr bod)
 blockTransform x = return x
