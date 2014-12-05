@@ -125,8 +125,6 @@ data Config = Config {
   -- | Path of static directory
   staticDir            :: FilePath,
   -- | Where to search for plugins by name
-  pluginDir            :: FilePath,
-  -- | Names of plugin modules to load
   pluginModules        :: [String],
   -- | Where to search for plugins by name
   pluginDir            :: FilePath,
