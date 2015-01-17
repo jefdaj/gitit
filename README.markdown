@@ -25,6 +25,5 @@ enhancements. Things that work so far:
 
 * The "external" plugin lets you make your own external page transform plugins.
 
-
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki

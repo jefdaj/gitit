@@ -1,5 +1,5 @@
 name:                gitit
-version:             0.10.5.1
+version:             0.10.6.1
 Cabal-version:       >= 1.6
 build-type:          Simple
 synopsis:            Wiki using happstack, git or darcs, and pandoc.
@@ -129,7 +129,8 @@ Library
                      Paths_gitit, Network.Gitit.Server, Network.Gitit.Export,
                      Network.Gitit.Util, Network.Gitit.Handlers,
                      Network.Gitit.Plugins, Network.Gitit.Rpxnow,
-                     Network.Gitit.Page, Network.Gitit.Feed
+                     Network.Gitit.Page, Network.Gitit.Feed,
+                     Network.Gitit.Compat.Except
   if flag(plugins)
     exposed-modules: Network.Gitit.Interface, Network.Gitit.Plugin.External
     build-depends:   ghc, ghc-paths
