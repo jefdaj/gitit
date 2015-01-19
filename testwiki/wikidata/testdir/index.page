@@ -1,0 +1,11 @@
+---
+format: markdown
+title: testdir index
+...
+
+This should print a globlist using relative links:
+
+~~~ { .globlist }
+/testdir/*
+*
+~~~

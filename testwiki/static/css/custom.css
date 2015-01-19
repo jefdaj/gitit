@@ -1,0 +1,31 @@
+@import url("screen.css"); /* default gitit screen styles */
+@import url("hk-pyg.css"); /* for syntax highlighting */
+
+/* for the depgraph plugin */
+.svg-container { 
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: middle; 
+  overflow: hidden; 
+  /* there's also padding-bottom, which is inserted by the python code */
+}
+
+/* is any of this really needed? */
+.svg-content { 
+ display: inline-block;
+ position: absolute;
+ top: 0;
+ left: 0;
+}
+
+/* it works! at least when classes are changed from node --> oldnode, newnode */
+/* TODO apply polygon strokes in here rather than in dotgraph theme */
+
+text { fill: black; }
+
+.oldnode { fill: none; }
+.newnode { fill: none; }
+
+.oldnode:hover { fill: #eeeeee; }
+.newnode:hover { fill: #eeffee; }
