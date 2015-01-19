@@ -1,9 +1,6 @@
-# This file was made by `cabal2nix ./. > default.nix`,
-# then edited to build using custom dependencies.
-
-# TODO add runDepends, myFilestore
 # TODO rewrite gitit.sh to use nix rather than custom build
 # TODO expand root partition, then add texlive to runDepends
+# TODO package canonical-filepath
 
 { pkgs ? (import <nixpkgs> {}).pkgs
 , shell ? false
@@ -12,13 +9,30 @@
 let
   inherit (pkgs) haskellPackages;
 
-  myFilestore = pkgs.fetchgit {
+  canonicalFilepath = with haskellPackages;
+    cabal.mkDerivation (self: {
+      pname = "canonical-filepath";
+      version = "1.0.0.3";
+      sha256 = "0dg9d4v08gykbjmzafpakgwc51mq5d5m6ilmhp68czpl30sqjhwf";
+      buildDepends = [ deepseq filepath ];
+      meta = {
+        homepage = "http://github.com/nominolo/canonical-filepath";
+        description = "Abstract data type for canonical file paths";
+        license = self.stdenv.lib.licenses.bsd3;
+        platforms = self.ghc.meta.platforms;
+      };
+    });
+
+  filestore = pkgs.fetchgit {
     url = "https://github.com/jefdaj/filestore.git";
     rev = "1b715eae3df5d925ff65962514572a880b2a56b5";
     sha256 = "0e4fe8d878e772ca0825b66c542608e747dbb1cbbfed22435790eb3b657aab51";
   };
 
-  myDepends = [ (import myFilestore { inherit pkgs; }) ];
+  myDepends = [
+    canonicalFilepath
+    (import filestore { inherit pkgs; })
+  ];
 
   runDepends = with pkgs; [
     R
@@ -40,6 +54,8 @@ let
     ]
     else [];
 
+# this is just the output of `cabal2nix ./.`
+# with some extra dependencies added to buildDepends
 in with haskellPackages; cabal.mkDerivation (self: {
   pname = "gitit";
   version = "0.10.5.1";
