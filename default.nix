@@ -1,6 +1,4 @@
-# TODO rewrite gitit.sh to use nix rather than custom build
 # TODO expand root partition, then add texlive to runDepends
-# TODO package canonical-filepath
 
 { pkgs ? (import <nixpkgs> {}).pkgs
 , shell ? false
@@ -8,8 +6,9 @@
 
 let
   inherit (pkgs) haskellPackages;
-
   canonicalFilepath = with haskellPackages;
+
+    # this is the output of `cabal2nix cabal://canonical-filepath`
     cabal.mkDerivation (self: {
       pname = "canonical-filepath";
       version = "1.0.0.3";
@@ -54,26 +53,26 @@ let
     ]
     else [];
 
-# this is just the output of `cabal2nix ./.`
-# with some extra dependencies added to buildDepends
-in with haskellPackages; cabal.mkDerivation (self: {
-  pname = "gitit";
-  version = "0.10.5.1";
-  src = ./.;
-  isLibrary = true;
-  isExecutable = true;
-  buildDepends = myDepends ++ runDepends ++ shellDepends ++ [
-    aeson base64Bytestring blazeHtml ConfigFile feed filepath
-    ghcPaths happstackServer highlightingKate hoauth2 hslogger
-    HStringTemplate HTTP httpClientTls httpConduit json mtl network
-    networkUri pandoc pandocTypes parsec random recaptcha safe SHA
-    split syb tagsoup text time uri url utf8String uuid xhtml xml
-    xssSanitize zlib
-  ];
-  meta = {
-    homepage = "http://gitit.net";
-    description = "Wiki using happstack, git or darcs, and pandoc";
-    license = "GPL";
-    platforms = self.ghc.meta.platforms;
-  };
-})
+in with haskellPackages;
+  # this is the output of `cabal2nix ./.` with customized buildDepends
+  cabal.mkDerivation (self: {
+    pname = "gitit";
+    version = "0.10.5.1";
+    src = ./.;
+    isLibrary = true;
+    isExecutable = true;
+    buildDepends = myDepends ++ runDepends ++ shellDepends ++ [
+      aeson base64Bytestring blazeHtml ConfigFile feed filepath
+      ghcPaths happstackServer highlightingKate hoauth2 hslogger
+      HStringTemplate HTTP httpClientTls httpConduit json mtl network
+      networkUri pandoc pandocTypes parsec random recaptcha safe SHA
+      split syb tagsoup text time uri url utf8String uuid xhtml xml
+      xssSanitize zlib
+    ];
+    meta = {
+      homepage = "http://gitit.net";
+      description = "Wiki using happstack, git or darcs, and pandoc";
+      license = "GPL";
+      platforms = self.ghc.meta.platforms;
+    };
+  })
