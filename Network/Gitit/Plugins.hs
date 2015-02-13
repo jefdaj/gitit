@@ -94,10 +94,14 @@ import System.Log.Logger (logM, Priority(..))
 --   return plugins'
 
 import qualified Network.Gitit.Plugin.Csv      as Csv
+import qualified Network.Gitit.Plugin.Dot      as Dot
 import qualified Network.Gitit.Plugin.External as External
+import qualified Network.Gitit.Plugin.Files    as Files
 
 loadPlugins :: [Plugin]
 loadPlugins =
   [ Csv.plugin
+  , Dot.plugin
   , External.plugin
+  , Files.plugin
   ]
