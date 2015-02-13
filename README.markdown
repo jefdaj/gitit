@@ -11,10 +11,12 @@ enhancements. Changes from upstream so far:
   the dependencies.
 
 * Because Nix sandboxes all the GHC and cabal-related stuff for you,
-  dynamically loading plugins is hard. I haven't gotten it to work.
+  dynamically loading plugins is tricky. I haven't gotten it to work
+  (although I hear other people don't have the same problems).
   Instead when I write plugins I put them in [Network/Gitit/Plugins][4]
   and import them explicitly from [Plugins.hs][5].
-  To improve runtime performance I also disable the `+plugins` compiler flag.
+  To improve runtime performance I also disable the `+plugins` compiler flag
+  and the `IsLibrary` build target.
 
 * I swapped out the [filestore][6] library for my own fork that follows symlinks
   transparently. That was necessary because my lab wiki stores a lot of large

@@ -5,6 +5,8 @@
 cabal.sandbox.config
 dist
 testwiki
+static
+templates
 testwiki.log
 
 # nix
