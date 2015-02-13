@@ -93,7 +93,11 @@ import System.Log.Logger (logM, Priority(..))
 --   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
 --   return plugins'
 
+import qualified Network.Gitit.Plugin.Csv      as Csv
 import qualified Network.Gitit.Plugin.External as External
 
 loadPlugins :: [Plugin]
-loadPlugins = [External.plugin]
+loadPlugins =
+  [ Csv.plugin
+  , External.plugin
+  ]

@@ -1,4 +1,4 @@
-module Csv (plugin) where
+module Network.Gitit.Plugin.Csv (plugin) where
 
 -- parts of this are based on:
 -- bonsaicode.wordpress.com/2013/01/15/programming-praxis-translate-csv-to-html
