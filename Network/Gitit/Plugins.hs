@@ -93,10 +93,16 @@ import System.Log.Logger (logM, Priority(..))
 --   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
 --   return plugins'
 
-import qualified Network.Gitit.Plugin.Csv      as Csv
-import qualified Network.Gitit.Plugin.Dot      as Dot
-import qualified Network.Gitit.Plugin.External as External
-import qualified Network.Gitit.Plugin.Files    as Files
+import qualified Network.Gitit.Plugin.Csv           as Csv
+import qualified Network.Gitit.Plugin.Dot           as Dot
+import qualified Network.Gitit.Plugin.External      as External
+import qualified Network.Gitit.Plugin.Files         as Files
+
+-- TODO remove these for now, since they don't belong in the actual wiki
+import qualified Network.Gitit.Plugin.BashExample   as BashExample
+import qualified Network.Gitit.Plugin.PerlExample   as PerlExample
+import qualified Network.Gitit.Plugin.PythonExample as PythonExample
+import qualified Network.Gitit.Plugin.RExample      as RExample
 
 loadPlugins :: [Plugin]
 loadPlugins =
@@ -104,4 +110,8 @@ loadPlugins =
   , Dot.plugin
   , External.plugin
   , Files.plugin
+  , BashExample.plugin
+  , PerlExample.plugin
+  , PythonExample.plugin
+  , RExample.plugin
   ]

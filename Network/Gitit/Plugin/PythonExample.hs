@@ -1,4 +1,4 @@
-module PythonExample (plugin) where
+module Network.Gitit.Plugin.PythonExample (plugin) where
 
 import Network.Gitit.Interface       (Plugin)
 import Network.Gitit.Plugin.External (mkPlugin, allArgs)

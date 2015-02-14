@@ -1,4 +1,4 @@
-module PerlExample (plugin) where
+module Network.Gitit.Plugin.PerlExample (plugin) where
 
 import Network.Gitit.Interface       (Plugin)
 import Network.Gitit.Plugin.External (mkPlugin, allArgs)

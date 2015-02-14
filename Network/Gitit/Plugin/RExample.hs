@@ -1,4 +1,4 @@
-module RExample (plugin) where
+module Network.Gitit.Plugin.RExample (plugin) where
 
 import Network.Gitit.Interface       (Plugin)
 import Network.Gitit.Plugin.External (mkPlugin, allArgs)
