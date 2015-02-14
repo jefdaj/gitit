@@ -23,7 +23,7 @@ import Data.Digest.Pure.SHA (sha1, showDigest)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 import Control.Monad (unless)
-import Control.Monad.Trans (liftIO)
+-- import Control.Monad.Trans (liftIO)
 
 plugin :: Plugin
 plugin = mkPageTransformM transformBlock

@@ -13,7 +13,7 @@ enhancements. Changes from upstream so far:
 * Because Nix sandboxes all the GHC and cabal-related stuff for you,
   dynamically loading plugins is tricky. I haven't gotten it to work
   (although I hear other people don't have the same problems).
-  Instead when I write plugins I put them in [Network/Gitit/Plugins][4]
+  Instead when I write plugins I put them in [Network/Gitit/Plugin/][4]
   and import them explicitly from [Plugins.hs][5].
   To improve runtime performance I also disable the `+plugins` compiler flag
   and the `IsLibrary` build target.
@@ -33,7 +33,7 @@ Things I still intend to do but haven't gotten around to:
 [1]: http://github.com/jgm/gitit
 [2]: https://github.com/jefdaj/jeffwiki
 [3]: http://nixos.org/nix/
-[4]: 
-[5]: 
-[6]: 
-[7]: 
+[4]: Network/Gitit/Plugin
+[5]: Network/Gitit/Plugins.hs
+[6]: http://hackage.haskell.org/package/filestore
+[7]: http://git-annex.branchable.com/
