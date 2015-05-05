@@ -29,7 +29,7 @@ Changes by Jeff Johnson:
 * remove redundant imports and variable names
 * add (Format "html") as required by newer gitit
 * remove mrNumber and arxiv functions
-
+* make articleLink into urlLink
 -}
 
 module Network.Gitit.Plugin.Bibtex where
@@ -39,7 +39,7 @@ module Network.Gitit.Plugin.Bibtex where
 -- * http://blog.wuzzeb.org/posts/2012-06-26-bibtex-and-gitit.html
 
 import Control.Monad (liftM)
-import Data.Char (toLower, isAlpha)
+import Data.Char (toLower)
 import qualified Data.List as L
 import qualified Data.List.Split as S
 import qualified Text.ParserCombinators.Parsec as P
@@ -96,9 +96,9 @@ render1 b s = case lookup s b of
     Just x  -> Str x
     Nothing -> Str ""
 
-articleLink :: String -> BibtexAttr -> Inline
-articleLink s b = case lookup s b of
-                  Just x  -> Link [Str "article"] (x, [])
+urlLink :: String -> BibtexAttr -> Inline
+urlLink s b = case lookup s b of
+                  Just x  -> Link [Str "url"] (x, [])
                   Nothing -> Str ""
 
 expandTex :: String -> String
@@ -135,8 +135,8 @@ renderEntry name b = raw ++ entries
             , mapInline (\a -> "\"" ++ a ++ "\"") $ render1 b "title"
             , Emph [render1 b "journal"]
             , render1 b "year"
-            , articleLink "url" b
-            , articleLink "url2" b
+            , urlLink "url" b
+            , urlLink "url2" b
             ]
 
         mapInline f (Str s) = Str $ f s
