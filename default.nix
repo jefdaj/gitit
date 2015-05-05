@@ -1,13 +1,12 @@
-# TODO expand root partition, then add texlive to runDepends
+# The middle part of this expression can be embedded in nixpkgs;
+# the top and bottom adapt it to use the current system instead.
 
-{ pkgs ? (import <nixpkgs> {}).pkgs
-, shell ? false
-}:
-
+with (import <nixpkgs> {}).pkgs;
+with haskellPackages;
 let
-  inherit (pkgs) haskellPackages;
-  canonicalFilepath = with haskellPackages;
 
+  # these dependencies are added automatically if you use my nixpkgs repo
+  canonicalFilepath =
     # this is the output of `cabal2nix cabal://canonical-filepath`
     cabal.mkDerivation (self: {
       pname = "canonical-filepath";
@@ -21,58 +20,46 @@ let
         platforms = self.ghc.meta.platforms;
       };
     });
-
-  filestore = pkgs.fetchgit {
+  filestore = fetchgit {
     url = "https://github.com/jefdaj/filestore.git";
     rev = "1b715eae3df5d925ff65962514572a880b2a56b5";
     sha256 = "0e4fe8d878e772ca0825b66c542608e747dbb1cbbfed22435790eb3b657aab51";
   };
+  gitit =
 
-  myDepends = [
-    canonicalFilepath
-    (import filestore { inherit pkgs; })
-  ];
+    # this part is the complete default.nix when added to mypkgs
+    { cabal, aeson, base64Bytestring, blazeHtml, ConfigFile, feed
+    , filepath, filestore, ghcPaths, happstackServer, highlightingKate
+    , hoauth2, hslogger, HStringTemplate, HTTP, httpClientTls
+    , httpConduit, json, mtl, network, networkUri, pandoc, pandocTypes
+    , parsec, random, recaptcha, safe, SHA, split, syb, tagsoup, text
+    , time, uri, url, utf8String, uuid, xhtml, xml, xssSanitize, zlib
+    , graphviz, lmodern, canonicalFilepath
+    }:
+    cabal.mkDerivation (self: {
+      pname = "gitit";
+      version = "0.10.6.1";
+      src = ./.;
+      isLibrary = true;
+      isExecutable = true;
+      jailbreak = true;
+      buildDepends = [
+        aeson base64Bytestring blazeHtml ConfigFile feed filepath filestore
+        ghcPaths happstackServer highlightingKate hoauth2 hslogger
+        HStringTemplate HTTP httpClientTls httpConduit json mtl network
+        networkUri pandoc pandocTypes parsec random recaptcha safe SHA
+        split syb tagsoup text time uri url utf8String uuid xhtml xml
+        xssSanitize zlib
+        canonicalFilepath graphviz
+      ];
+      meta = {
+        homepage = "http://gitit.net";
+        description = "Wiki using happstack, git or darcs, and pandoc";
+        license = "GPL";
+        platforms = self.ghc.meta.platforms;
+      };
+    })
 
-  runDepends = with pkgs; [
-    R
-    bash
-    graphviz
-    perl
-    procps # includes pkill
-    python
-  ];
-
-  # put whatever tools you like to use here
-  # (only cabal-install is really required)
-  shellDepends = if shell
-    then with pkgs; [
-      git
-      haskellPackages.cabalInstall
-      less
-      vim
-    ]
-    else [];
-
-in with haskellPackages;
-  # this is the output of `cabal2nix ./.` with customized buildDepends
-  cabal.mkDerivation (self: {
-    pname = "gitit";
-    version = "0.10.5.1";
-    src = ./.;
-    isLibrary = true;
-    isExecutable = true;
-    buildDepends = myDepends ++ runDepends ++ shellDepends ++ [
-      aeson base64Bytestring blazeHtml ConfigFile feed filepath
-      ghcPaths happstackServer highlightingKate hoauth2 hslogger
-      HStringTemplate HTTP httpClientTls httpConduit json mtl network
-      networkUri pandoc pandocTypes parsec random recaptcha safe SHA
-      split syb tagsoup text time uri url utf8String uuid xhtml xml
-      xssSanitize zlib
-    ];
-    meta = {
-      homepage = "http://gitit.net";
-      description = "Wiki using happstack, git or darcs, and pandoc";
-      license = "GPL";
-      platforms = self.ghc.meta.platforms;
-    };
-  })
+; in callPackage gitit {
+  inherit canonicalFilepath filestore;
+}
