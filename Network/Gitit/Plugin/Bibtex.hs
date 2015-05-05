@@ -30,6 +30,8 @@ Changes by Jeff Johnson:
 * add (Format "html") as required by newer gitit
 * remove mrNumber and arxiv functions
 * make articleLink into urlLink
+* add pdfLink to insert links to my pdf of the paper, if any
+  (this required threading PluginM through some stuff)
 -}
 
 module Network.Gitit.Plugin.Bibtex where
@@ -38,13 +40,17 @@ module Network.Gitit.Plugin.Bibtex where
 -- * http://blog.wuzzeb.org/posts/2012-06-19-bibtex-and-pandoc-2.html
 -- * http://blog.wuzzeb.org/posts/2012-06-26-bibtex-and-gitit.html
 
+import Control.Exception (try, SomeException)
 import Control.Monad (liftM)
 import Data.Char (toLower)
+import Data.List (intercalate)
+import Data.FileStore (Resource(..), FileStore(..), directory)
 import qualified Data.List as L
 import qualified Data.List.Split as S
 import qualified Text.ParserCombinators.Parsec as P
 import Text.ParserCombinators.Parsec ((<|>))
 import Text.Pandoc
+import System.FilePath ((</>))
 
 import Network.Gitit.Interface
 
@@ -84,11 +90,6 @@ bibVal = liftM concat $ P.many1 (bibValMatched <|> (liftM (:[]) (P.noneOf "{}"))
 bibValMatched :: P.Parser String
 bibValMatched = P.between (P.char '{') (P.char '}') bibVal
 
-renderEntries :: [Bibtex] -> Block
-renderEntries lst = DefinitionList $ map display lst'
-    where lst' = L.sortBy (\(Bibtex a _) (Bibtex b _) -> compare a b) lst
-          display (Bibtex key b) = ([Strong [Str key]], [[Plain $ renderEntry key b]])
-
 type BibtexAttr = [(String, String)]
 
 render1 :: BibtexAttr -> String -> Inline
@@ -100,6 +101,23 @@ urlLink :: String -> BibtexAttr -> Inline
 urlLink s b = case lookup s b of
                   Just x  -> Link [Str "url"] (x, [])
                   Nothing -> Str ""
+
+pdfLink :: String -> PluginM Inline
+pdfLink key = do
+  req  <- askRequest
+  stor <- askFileStore
+  let dir  = reqDir req
+      name = key ++ ".pdf"
+  sdir <- liftIO (try (directory stor dir) :: IO (Either SomeException [Resource]))
+  return $ case sdir of
+    Left  _ -> Str ""
+    Right d -> if (FSFile name) `elem` d
+                 then Link [Str "pdf"] (name, [])
+                 else Str ""
+
+-- TODO deduplicate this with the one in Plugin/Files.hs
+reqDir :: Request -> FilePath
+reqDir = intercalate "/" . init . rqPaths
 
 expandTex :: String -> String
 expandTex ('\\':a:'{':b:'}':xs) = expandTex ('\\':a:b:xs)
@@ -126,30 +144,43 @@ prettyAuthor x = L.intercalate ", " $ map fixOne $ S.splitOn " and" x
                     [a]    -> a
                     (f:xs) -> concat xs ++ " " ++ f
 
-renderEntry :: String -> BibtexAttr -> [Inline]
-renderEntry name b = raw ++ entries
-  where raw = [(RawInline (Format "html") $ "<a name=\"" ++ name ++ "\"></a>")]
+renderEntry :: String -> BibtexAttr -> PluginM [Inline]
+renderEntry name b = do
+  pdf <- pdfLink name
+  let raw = [(RawInline (Format "html") $ "<a name=\"" ++ name ++ "\"></a>")]
+      mapInline f (Str s) = Str $ f s
+      mapInline _ x = x
+      isEmptyStr (Str "") = True
+      isEmptyStr _        = False
+      entries = L.intersperse (Str ", ") $ filter (not . isEmptyStr)
+        [ mapInline (prettyAuthor . expandTex) $ render1 b "author"
+        , mapInline (\a -> "\"" ++ a ++ "\"") $ render1 b "title"
+        , Emph [render1 b "journal"]
+        , render1 b "year"
+        , urlLink "url" b
+        , urlLink "url2" b
+        , pdf
+        ]
+  return $ raw ++ entries
 
-        entries = L.intersperse (Str ", ") $ filter (not . isEmptyStr)
-            [ mapInline (prettyAuthor . expandTex) $ render1 b "author"
-            , mapInline (\a -> "\"" ++ a ++ "\"") $ render1 b "title"
-            , Emph [render1 b "journal"]
-            , render1 b "year"
-            , urlLink "url" b
-            , urlLink "url2" b
-            ]
+renderEntries :: [Bibtex] -> PluginM Block
+renderEntries lst = do
+    let lst' = L.sortBy (\(Bibtex a _) (Bibtex b _) -> compare a b) lst
+        display (Bibtex key b) = do
+          entry <- renderEntry key b
+          return $ ([Strong [Str key]], [map Plain [entry]])
+    lst'' <- mapM display lst'
+    return $ DefinitionList $ lst''
 
-        mapInline f (Str s) = Str $ f s
-        mapInline _ x = x
-        isEmptyStr (Str "") = True
-        isEmptyStr _        = False
-
-transformBlock :: Block -> Block
-transformBlock (CodeBlock (_, classes, _) contents) | "bib" `elem` classes =
-        case P.parse bibParser "" contents of
-           Left err -> BlockQuote [Para [Str $ "Error parsing bib data: " ++ show err]]
-           Right x -> renderEntries x
-transformBlock x = x
+transformBlock :: Block -> PluginM Block
+transformBlock (CodeBlock (_, cs, _) txt) | "bib" `elem` cs = do
+  let bs = P.parse bibParser "" txt
+  case bs of
+    Right bs' -> renderEntries bs'
+    Left  err -> do
+      let msg = "Error parsing bib data: " ++ show err
+      return $ BlockQuote [Para [Str $ msg]]
+transformBlock x = return x
 
 plugin :: Plugin
-plugin = mkPageTransform transformBlock
+plugin = mkPageTransformM transformBlock
