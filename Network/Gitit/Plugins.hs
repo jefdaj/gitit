@@ -24,6 +24,7 @@ module Network.Gitit.Plugins ( loadPlugins )
 where
 
 import Network.Gitit.Types
+import qualified Network.Gitit.Plugin.Bibtex   as Bibtex
 import qualified Network.Gitit.Plugin.Csv      as Csv
 import qualified Network.Gitit.Plugin.Dot      as Dot
 import qualified Network.Gitit.Plugin.External as External
@@ -31,7 +32,8 @@ import qualified Network.Gitit.Plugin.Files    as Files
 
 loadPlugins :: [Plugin]
 loadPlugins =
-  [ Csv.plugin
+  [ Bibtex.plugin
+  , Csv.plugin
   , Dot.plugin
   , External.plugin
   , Files.plugin
