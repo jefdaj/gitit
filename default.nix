@@ -27,8 +27,8 @@ let
       version = "0.6.1";
       src = fetchgit {
         url = "https://github.com/jgm/filestore";
-        rev = "66e34ab7e25f3c824ac4366bbaa309aaad76432e";
-        sha256 = "0002d5c8e2091d4b92604864616813742f6ab50459173c90f5a67c1376b09514";
+        rev = "eac539da48a152c1fa9e870238248bd5b6a689d7";
+        sha256 = "5fca03c421175e589ae11d3719584a2ceb3cb3e5d7620ef35aa8fb53139e872f";
       };
       buildDepends = [ Diff filepath parsec split time utf8String xml ];
       testDepends = [ Diff filepath HUnit mtl time ];
