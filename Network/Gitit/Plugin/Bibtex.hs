@@ -36,9 +36,11 @@ Changes by Jeff Johnson:
 
 TODO: how to handle the bibliography?
 
-      if the regular pandoc way works this might all not be necessary...
+      if pandoc-citeproc works this might not be necessary...
       you could just create a temporary bib file from the blocks
-      then insert it in the metadata and continue.
+      then insert it in the metadata
+      and finally call citeproc to do all the fancy stuff
+      but then what about your PDF links?
 
       for now this is good enough to start studying with.
       think about whether there's actually anything important missing,
