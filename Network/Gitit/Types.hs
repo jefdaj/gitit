@@ -99,6 +99,8 @@ data Config = Config {
   repositoryType       :: FileStoreType,
   -- | Default page markup type for this wiki
   defaultPageType      :: PageType,
+  -- | Path to the default citation style for use with pandoc-citeproc
+  defaultCitationStyle :: FilePath,
   -- | How to handle LaTeX math in pages?
   mathMethod           :: MathMethod,
   -- | Treat as literate haskell by default?

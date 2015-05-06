@@ -24,14 +24,16 @@ module Network.Gitit.Plugins ( loadPlugins )
 where
 
 import Network.Gitit.Types
-import qualified Network.Gitit.Plugin.Csv      as Csv
-import qualified Network.Gitit.Plugin.Dot      as Dot
-import qualified Network.Gitit.Plugin.External as External
-import qualified Network.Gitit.Plugin.Files    as Files
+import qualified Network.Gitit.Plugin.CiteProcBlock as CiteProcBlock
+import qualified Network.Gitit.Plugin.Csv           as Csv
+import qualified Network.Gitit.Plugin.Dot           as Dot
+import qualified Network.Gitit.Plugin.External      as External
+import qualified Network.Gitit.Plugin.Files         as Files
 
 loadPlugins :: [Plugin]
 loadPlugins =
-  [ Csv.plugin
+  [ CiteProcBlock.plugin
+  , Csv.plugin
   , Dot.plugin
   , External.plugin
   , Files.plugin

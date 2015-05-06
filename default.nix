@@ -47,7 +47,7 @@ let
     , httpConduit, json, mtl, network, networkUri, pandoc, pandocTypes
     , parsec, random, recaptcha, safe, SHA, split, syb, tagsoup, text
     , time, uri, url, utf8String, uuid, xhtml, xml, xssSanitize, zlib
-    , graphviz, lmodern, canonicalFilepath
+    , graphviz, lmodern, canonicalFilepath, pandocCiteproc
     }:
     cabal.mkDerivation (self: {
       pname = "gitit";
@@ -63,7 +63,7 @@ let
         networkUri pandoc pandocTypes parsec random recaptcha safe SHA
         split syb tagsoup text time uri url utf8String uuid xhtml xml
         xssSanitize zlib
-        canonicalFilepath graphviz
+        canonicalFilepath graphviz pandocCiteproc
       ];
       meta = {
         homepage = "http://gitit.net";
