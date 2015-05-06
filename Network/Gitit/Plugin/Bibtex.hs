@@ -32,6 +32,17 @@ Changes by Jeff Johnson:
 * make articleLink into urlLink
 * add pdfLink to insert links to my pdf of the paper, if any
   (this required threading PluginM through some stuff)
+* adjust the citation format for biology (dot separators etc.)
+
+TODO: how to handle the bibliography?
+
+      if the regular pandoc way works this might all not be necessary...
+      you could just create a temporary bib file from the blocks
+      then insert it in the metadata and continue.
+
+      for now this is good enough to start studying with.
+      think about whether there's actually anything important missing,
+      or if clicking references is a waste
 -}
 
 module Network.Gitit.Plugin.Bibtex where
@@ -50,7 +61,6 @@ import qualified Data.List.Split as S
 import qualified Text.ParserCombinators.Parsec as P
 import Text.ParserCombinators.Parsec ((<|>))
 import Text.Pandoc
-import System.FilePath ((</>))
 
 import Network.Gitit.Interface
 
@@ -94,8 +104,10 @@ type BibtexAttr = [(String, String)]
 
 render1 :: BibtexAttr -> String -> Inline
 render1 b s = case lookup s b of
-    Just x  -> Str x
+    Just x  -> Str $ stripDot x
     Nothing -> Str ""
+    where
+      stripDot x = reverse $ dropWhile (== '.') $ reverse x
 
 urlLink :: String -> BibtexAttr -> Inline
 urlLink s b = case lookup s b of
@@ -115,7 +127,7 @@ pdfLink key = do
                  then Link [Str "pdf"] (name, [])
                  else Str ""
 
--- TODO deduplicate this with the one in Plugin/Files.hs
+-- TODO deduplicate this with the one in Plugin/Files.hs?
 reqDir :: Request -> FilePath
 reqDir = intercalate "/" . init . rqPaths
 
@@ -138,7 +150,7 @@ expandTex (a:xs) = a : expandTex xs
 expandTex [] = []
 
 prettyAuthor :: String -> String
-prettyAuthor x = L.intercalate ", " $ map fixOne $ S.splitOn " and" x
+prettyAuthor x = L.intercalate ". " $ map fixOne $ S.splitOn " and" x
   where fixOne s = case S.splitOn "," s of
                     []     -> ""
                     [a]    -> a
@@ -147,28 +159,27 @@ prettyAuthor x = L.intercalate ", " $ map fixOne $ S.splitOn " and" x
 renderEntry :: String -> BibtexAttr -> PluginM [Inline]
 renderEntry name b = do
   pdf <- pdfLink name
-  let raw = [(RawInline (Format "html") $ "<a name=\"" ++ name ++ "\"></a>")]
-      mapInline f (Str s) = Str $ f s
+  let mapInline f (Str s) = Str $ f s
       mapInline _ x = x
       isEmptyStr (Str "") = True
       isEmptyStr _        = False
-      entries = L.intersperse (Str ", ") $ filter (not . isEmptyStr)
-        [ mapInline (prettyAuthor . expandTex) $ render1 b "author"
-        , mapInline (\a -> "\"" ++ a ++ "\"") $ render1 b "title"
-        , Emph [render1 b "journal"]
-        , render1 b "year"
-        , urlLink "url" b
-        , urlLink "url2" b
-        , pdf
-        ]
-  return $ raw ++ entries
+  return $ (L.intersperse (Str ". ") $ filter (not . isEmptyStr)
+    [ mapInline (prettyAuthor . expandTex) $ render1 b "author"
+    , render1 b "title"
+    , Emph [render1 b "journal"]
+    , render1 b "year"
+    ]) ++ [Str ". ("] ++ (L.intersperse (Str ", ") $ filter (not . isEmptyStr)
+    [ urlLink "url" b
+    , urlLink "url2" b
+    , pdf
+    ]) ++ [Str ")"]
 
 renderEntries :: [Bibtex] -> PluginM Block
 renderEntries lst = do
     let lst' = L.sortBy (\(Bibtex a _) (Bibtex b _) -> compare a b) lst
         display (Bibtex key b) = do
           entry <- renderEntry key b
-          return $ ([Strong [Str key]], [map Plain [entry]])
+          return ([], [map Plain [entry]])
     lst'' <- mapM display lst'
     return $ DefinitionList $ lst''
 
