@@ -31,7 +31,7 @@ module Network.Gitit.Plugin.CiteProcBlock
  -
  - Citeproc makes URLs clickable, and this plugin also extends that to
  - PDFs: each reference is followed by a link to a PDF of the same name if
- - one exists.  For example, if you add a file `kerby1972.pdf` in the same
+ - one exists. For example, if you add a file `kerby1972.pdf` in the same
  - directory as the page used in the example above, then
  - `<a href="kerby1972.pdf">kerby1972.pdf</>` will be added next to the end
  - of the bibliography entry. See http://git-annex.branchable.com/ for
@@ -49,8 +49,11 @@ import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)
 import Text.CSL.Pandoc       (processCites)
 import Text.CSL.Parser       (readCSLFile)
-import Text.CSL.Reference    (Reference)
+import Text.CSL.Reference    (Reference, refId, unLiteral)
 import Text.CSL.Style        (Style)
+
+
+-- make bibliography --
 
 isBibBlock :: Block -> Bool
 isBibBlock (CodeBlock (_,cs,_) _) = "bib" `elem` cs
@@ -87,6 +90,9 @@ readBibliography blks = do
   bib <- liftIO $ readBibtexInputString True txt
   return bib
 
+
+-- add pdf links --
+
 reqDir :: Request -> FilePath
 reqDir = intercalate "/" . init . rqPaths
 
@@ -103,16 +109,34 @@ pdfLink key = do
                  then Link [Str "name"] (name, [])
                  else Str ""
 
-addPdfLinks :: [Reference] -> PluginM [(Reference, Inline)]
-addPdfLinks = undefined
+{- The actual Reference type looks really complicated,
+ - so I insert links into the final Pandoc instead.
+ - But they need to be made from the References because the
+ - final output doesn't have citation keys anymore.
+ - So this function makes a list of links...
+ -}
+makePdfLinks :: [Reference] -> PluginM [Inline]
+makePdfLinks refs = do
+  let keys = map (unLiteral . refId) refs
+  pdfs <- mapM pdfLink keys
+  return pdfs
 
-processCiteBlocks :: Pandoc -> PluginM Pandoc
-processCiteBlocks doc = do
+-- and this one adds them to the document.
+addPdfLinks :: Pandoc -> [Inline] -> PluginM Pandoc
+addPdfLinks d is = return d
+
+
+-- process document --
+
+processDoc :: Pandoc -> PluginM Pandoc
+processDoc doc = do
   let (doc', bib) = separateBibliography doc
   bib' <- readBibliography bib
+  pdfs <- makePdfLinks bib'
   sty  <- readCitationStyle
   let doc'' = processCites sty bib' doc'
-  return doc''
+  doc''' <- addPdfLinks doc'' pdfs
+  return doc'''
 
 plugin :: Plugin
-plugin = PageTransform processCiteBlocks
+plugin = PageTransform processDoc
