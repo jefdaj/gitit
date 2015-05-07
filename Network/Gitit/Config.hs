@@ -84,8 +84,8 @@ extractConfig cp = do
       cfRepositoryType <- get cp "DEFAULT" "repository-type"
       cfRepositoryPath <- get cp "DEFAULT" "repository-path"
       cfDefaultPageType <- get cp "DEFAULT" "default-page-type"
+      cfCitationStyle <- get cp "DEFAULT" "citation-style"
       cfDefaultBibliography <- get cp "DEFAULT" "default-bibliography"
-      cfDefaultCitationStyle <- get cp "DEFAULT" "default-citation-style"
       cfMathMethod <- get cp "DEFAULT" "math"
       cfMathjaxScript <- get cp "DEFAULT" "mathjax-script"
       cfShowLHSBirdTracks <- get cp "DEFAULT" "show-lhs-bird-tracks"
@@ -134,6 +134,12 @@ extractConfig cp = do
       cfRecentActivityDays <- get cp "DEFAULT" "recent-activity-days"
       let (pt, lhs) = parsePageType cfDefaultPageType
       let markupHelpFile = show pt ++ if lhs then "+LHS" else ""
+
+      defaultStyle  <- liftIO $ getDataFileName $ "data" </> "styles" </> "apa"
+      let style = if null cfPandocUserData || null cfCitationStyle
+                    then defaultStyle
+                    else cfPandocUserData </> "styles" </> cfCitationStyle
+
       markupHelpPath <- liftIO $ getDataFileName $ "data" </> "markupHelp" </> markupHelpFile
       markupHelpText <- liftM (writeHtmlString def . readMarkdown def) $
                             liftIO $ readFileUTF8 markupHelpPath
@@ -155,13 +161,10 @@ extractConfig cp = do
         , repositoryType       = repotype'
         , defaultPageType      = pt
 
-        , defaultBibliography  = if null cfDefaultBibliography
-                                   then Nothing
-                                   else Just cfDefaultBibliography
-
-        , defaultCitationStyle = if null cfDefaultCitationStyle
-                                   then Nothing
-                                   else Just cfDefaultCitationStyle
+        , citationStyle        = style
+        , defaultBibliography  = if null cfPandocUserData || null cfDefaultBibliography
+                                  then Nothing
+                                  else Just $ cfPandocUserData </> cfDefaultBibliography
 
         , mathMethod           = case map toLower cfMathMethod of
                                       "jsmath"   -> JsMathScript
@@ -215,6 +218,7 @@ extractConfig cp = do
         , accessQuestion       = if null cfAccessQuestion
                                     then Nothing
                                     else Just (cfAccessQuestion, splitCommaList cfAccessQuestionAnswers)
+
         , useRecaptcha         = cfUseRecaptcha
         , recaptchaPublicKey   = cfRecaptchaPublicKey
         , recaptchaPrivateKey  = cfRecaptchaPrivateKey
