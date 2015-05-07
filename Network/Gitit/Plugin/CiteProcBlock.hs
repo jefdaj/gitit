@@ -28,12 +28,23 @@ module Network.Gitit.Plugin.CiteProcBlock
  - which should point to a file in `pandoc-user-data/styles`.
  - There are thousands of styles available at http://www.zotero.org/styles
  - or http://github.com/citation-style-language/styles.
+ -
+ - Citeproc makes URLs clickable, and this plugin also extends that to
+ - PDFs: each reference is followed by a link to a PDF of the same name if
+ - one exists.  For example, if you add a file `kerby1972.pdf` in the same
+ - directory as the page used in the example above, then
+ - `<a href="kerby1972.pdf">kerby1972.pdf</>` will be added next to the end
+ - of the bibliography entry. See http://git-annex.branchable.com/ for
+ - efficient version control of large files in git.
+ -
+ - TODO also do other filetypes? what about pages?
+ - TODO report minor href bug with DOI urls in pandoc-citeproc
  -}
 
--- TODO report minor href bug with DOI urls in pandoc-citeproc
--- TODO add custom PDF links from the bibtex branch
-
 import Network.Gitit.Interface
+import Control.Exception     (try, SomeException)
+import Data.FileStore        (Resource(..), FileStore(..), directory)
+import Data.List             (intercalate)
 import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)
 import Text.CSL.Pandoc       (processCites)
@@ -75,6 +86,25 @@ readBibliography blks = do
     ]
   bib <- liftIO $ readBibtexInputString True txt
   return bib
+
+reqDir :: Request -> FilePath
+reqDir = intercalate "/" . init . rqPaths
+
+pdfLink :: String -> PluginM Inline
+pdfLink key = do
+  req  <- askRequest
+  stor <- askFileStore
+  let dir  = reqDir req
+      name = key ++ ".pdf"
+  sdir <- liftIO (try (directory stor dir) :: IO (Either SomeException [Resource]))
+  return $ case sdir of
+    Left  _ -> Str ""
+    Right d -> if (FSFile name) `elem` d
+                 then Link [Str "name"] (name, [])
+                 else Str ""
+
+addPdfLinks :: [Reference] -> PluginM [(Reference, Inline)]
+addPdfLinks = undefined
 
 processCiteBlocks :: Pandoc -> PluginM Pandoc
 processCiteBlocks doc = do
