@@ -101,6 +101,8 @@ data Config = Config {
   defaultPageType      :: PageType,
   -- | Path to the default citation style for use with pandoc-citeproc
   defaultCitationStyle :: FilePath,
+  -- | Path to the default bibliography for use with pandoc-citeproc
+  defaultBibliography :: Maybe FilePath,
   -- | How to handle LaTeX math in pages?
   mathMethod           :: MathMethod,
   -- | Treat as literate haskell by default?
