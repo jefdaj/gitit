@@ -84,8 +84,8 @@ extractConfig cp = do
       cfRepositoryType <- get cp "DEFAULT" "repository-type"
       cfRepositoryPath <- get cp "DEFAULT" "repository-path"
       cfDefaultPageType <- get cp "DEFAULT" "default-page-type"
-      cfDefaultCitationStyle <- get cp "DEFAULT" "default-citation-style"
       cfDefaultBibliography <- get cp "DEFAULT" "default-bibliography"
+      cfDefaultCitationStyle <- get cp "DEFAULT" "default-citation-style"
       cfMathMethod <- get cp "DEFAULT" "math"
       cfMathjaxScript <- get cp "DEFAULT" "mathjax-script"
       cfShowLHSBirdTracks <- get cp "DEFAULT" "show-lhs-bird-tracks"
@@ -154,10 +154,15 @@ extractConfig cp = do
           repositoryPath       = cfRepositoryPath
         , repositoryType       = repotype'
         , defaultPageType      = pt
-        , defaultCitationStyle = cfDefaultCitationStyle
+
         , defaultBibliography  = if null cfDefaultBibliography
                                    then Nothing
                                    else Just cfDefaultBibliography
+
+        , defaultCitationStyle = if null cfDefaultCitationStyle
+                                   then Nothing
+                                   else Just cfDefaultCitationStyle
+
         , mathMethod           = case map toLower cfMathMethod of
                                       "jsmath"   -> JsMathScript
                                       "mathml"   -> MathML

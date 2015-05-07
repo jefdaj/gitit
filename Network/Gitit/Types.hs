@@ -100,7 +100,7 @@ data Config = Config {
   -- | Default page markup type for this wiki
   defaultPageType      :: PageType,
   -- | Path to the default citation style for use with pandoc-citeproc
-  defaultCitationStyle :: FilePath,
+  defaultCitationStyle :: Maybe FilePath,
   -- | Path to the default bibliography for use with pandoc-citeproc
   defaultBibliography :: Maybe FilePath,
   -- | How to handle LaTeX math in pages?
