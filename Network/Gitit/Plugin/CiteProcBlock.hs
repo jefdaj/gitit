@@ -121,9 +121,20 @@ makePdfLinks refs = do
   pdfs <- mapM pdfLink keys
   return pdfs
 
+addPdfLink :: (Block, Inline) -> Block
+addPdfLink ((Para is), i) = Para (is ++ [i])
+addPdfLink (b,_) = b
+
 -- and this one adds them to the document.
 addPdfLinks :: Pandoc -> [Inline] -> PluginM Pandoc
-addPdfLinks d is = return d
+addPdfLinks (Pandoc meta blks) pdfs = do
+  -- make the list of links infinite,
+  -- then add them onto the paragraphs backwards
+  -- (assuming the right paragraphs are at the end)
+  let tmp1 = reverse pdfs ++ repeat (Str "")
+      tmp2 = zip (reverse blks) tmp1
+      tmp3 = map addPdfLink tmp2
+  return $ Pandoc meta (reverse tmp3)
 
 
 -- process document --
