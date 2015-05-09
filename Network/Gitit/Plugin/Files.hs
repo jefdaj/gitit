@@ -7,6 +7,7 @@ import Data.List (intercalate, isInfixOf, sort)
 import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
 
+-- TODO when listing pages, use their titles if possible (have a flag)
 
 -- This plugin allows you to include a list of files
 -- in a page. It's similar to "All pages" index,
