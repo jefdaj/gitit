@@ -54,7 +54,7 @@ module Network.Gitit.ContentTransformer
   -- * Content or context augmentation combinators
   , applyPageTransforms
   , wikiDivify
-  , addPageTitleToPandoc
+  -- , addPageTitleToPandoc
   , addMathSupport
   , addScripts
   -- * ContentTransformer context API
@@ -324,12 +324,7 @@ applyWikiTemplate c = do
 -- | Converts Page to Pandoc, applies page transforms, and adds page
 -- title.
 pageToWikiPandoc :: Page -> ContentTransformer Pandoc
-pageToWikiPandoc page' = do
-  doc <- pageToWikiPandoc' page'
-  noTitle <- noPageTitle page'
-  if noTitle
-    then addPandocTitleToPage doc
-    else addPageTitleToPandoc (pageTitle page') doc
+pageToWikiPandoc page' = pageToWikiPandoc' page' >>= setTitles page'
 
 pageToWikiPandoc' :: Page -> ContentTransformer Pandoc
 pageToWikiPandoc' = applyPreParseTransforms >=>
@@ -611,35 +606,26 @@ wikiDivify c = do
                           else thediv ! [identifier "categoryList"] << ulist << map categoryLink categories
   return $ thediv ! [identifier "wikipage"] << [c, htmlCategories]
 
-
--- TODO refactor title stuff:
---   addPageTitleToPandoc, noPageTitle, addPandocTitleToPage -> setTitles
---   pageToWikiPandoc should call setTitles
-
--- | Adds page title to a Pandoc document.
-addPageTitleToPandoc :: String -> Pandoc -> ContentTransformer Pandoc
-addPageTitleToPandoc title' (Pandoc m blocks) = do
-  updateLayout $ \layout -> layout{ pgTitle = title' }
-  return $ if null title' || (not . null . docTitle) m
-              then Pandoc m blocks
-              else Pandoc (B.setMeta "title" (B.str title') m) blocks
-
-noPageTitle :: Page -> ContentTransformer Bool
-noPageTitle page = do
+{- This picks the best title for the current page. Priorities:
+ -
+ - (1) A title specified in the Pandoc document
+ - (2) A title specified in the page metadata
+ - (3) The path of the page in the repository
+ -
+ - It would probably make more sense to set (1) to match (2) before
+ - applying PageTransforms; I just thought of this way first.
+ -}
+setTitles :: Page -> Pandoc -> ContentTransformer Pandoc
+setTitles page doc@(Pandoc m bs) = do
   ctx <- get
   let pTitle = pageTitle page
       pName  = pgPageName $ ctxLayout ctx
-      isNone = null pTitle || pTitle == pName
-  return isNone
-
-addPandocTitleToPage :: Pandoc -> ContentTransformer Pandoc
-addPandocTitleToPage doc@(Pandoc m _) = do
-  let title' = inlinesToString $ docTitle m
-  if null title'
-    then return doc
-    else do
-      updateLayout $ \l -> l { pgTitle = title' }
-      return doc
+      pDoc   = Pandoc (B.setMeta "title" (B.str pTitle) m) bs
+      dTitle = inlinesToString $ docTitle m
+      dBest  = (null pTitle || pTitle == pName) && (not $ null dTitle)
+      (title', doc') = if dBest then (dTitle, doc) else (pTitle, pDoc)
+  updateLayout $ \layout -> layout { pgTitle = title' }
+  return doc'
 
 -- | Adds javascript links for math support.
 addMathSupport :: a -> ContentTransformer a
