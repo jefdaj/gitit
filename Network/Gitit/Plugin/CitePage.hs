@@ -10,27 +10,33 @@ module Network.Gitit.Plugin.CitePage
  -   one of its bibtex keys, the title for that bibtex entry will be used.
  -   If there's no title the key itself is used.
 
- - TODO implement ^that if not too hard
- -  get just the bibliography (borrow code from citeprocblock)
- -  parse into (key, title) pairs
- -  lookup the current name to get the title, if any
- -  only do that if there isn't a title already
- -
  - * If the current page includes a citation and there's a matching
  -   wiki page in the same directory, the citation will be replaced by a
  -   link to that page. The idea is that if you already wrote notes you
  -   probably want to go review them instead of jumping to the original
  -   source. Citations of the current source are ignored.
  -
- - Other bibtex is allowed too and will be ignored (and hopefully passed on
- - to my CiteProcBlock plugin!)
+ - TODO also add the pdf linking? Would be easy once you have the title...
+ -      if that's in too, rename to "fancy" something
+ -
+ - Other bibtex is allowed too and will be ignored (or hopefully passed on
+ - to my CiteProc plugin!)
  -}
 
 import Network.Gitit.Interface
-import Control.Exception (try, SomeException)
-import Data.FileStore    (Resource(FSFile, FSDirectory), directory)
-import Data.List         (intercalate)
-import System.FilePath   (takeBaseName, (</>))
+import Network.Gitit.Plugin.CiteProc (separateBibliography, readBibliography)
+
+import Control.Exception  (try, SomeException)
+import Data.FileStore     (Resource(FSFile, FSDirectory), directory)
+import Data.List          (intercalate)
+import Data.Map           (union, fromList)
+import System.FilePath    (takeBaseName)
+import Text.CSL.Reference (Reference, refId, titleShort, unLiteral)
+import Text.CSL.Style     (unFormatted)
+
+----------------------
+-- shared utilities --
+----------------------
 
 -- TODO is this available from the Interface already?
 askName :: PluginM FilePath
@@ -38,6 +44,46 @@ askName = do
   req <- askRequest
   let base = takeBaseName $ rqUri req
   return base
+
+--------------------
+-- set page title --
+--------------------
+
+getBibliography :: Pandoc -> PluginM [Reference]
+getBibliography doc = do
+  let (_, bib) = separateBibliography doc
+  bib' <- readBibliography bib
+  return bib'
+
+setPageTitle :: Pandoc -> PluginM Pandoc
+setPageTitle doc@(Pandoc m bs) = do
+  bib  <- getBibliography doc
+  meta <- askMeta
+  case lookup "title" meta of
+    Just _ -> return doc
+    Nothing -> do
+      name <- askName
+      let titles = map keyAndTitle bib
+          title  = lookup name titles
+      case title of
+        Nothing -> return doc
+        Just t  -> do
+          let old  = unMeta m
+              new  = fromList [("title", MetaInlines t)]
+              both = Meta {unMeta = union new old}
+              doc' = Pandoc both bs
+          return doc'
+
+-- I couldn't figure out getReference Locators, so I worked around them
+keyAndTitle :: Reference -> (String, [Inline])
+keyAndTitle r = (unId r, unTitle r)
+  where
+    unId    = unLiteral   . refId
+    unTitle = unFormatted . titleShort
+
+--------------------
+-- link citations --
+--------------------
 
 resPath :: Resource -> FilePath
 resPath (FSFile      f) = f
@@ -75,6 +121,7 @@ processWord ('@':name) = do
     else return ('@':name)
 processWord w = return w
 
+-- TODO more elegant notation?
 processLine :: String -> PluginM String
 processLine line = do
   let ws = words line
@@ -82,12 +129,17 @@ processLine line = do
   let ws'' = unwords ws'
   return ws''
 
+-- TODO more elegant notation?
 processPage :: String -> PluginM String
 processPage file = do
   let ls = lines file
   ls' <- mapM processLine ls
   let ls'' = unlines ls'
   return ls''
+
+----------
+-- main --
+----------
 
 plugin :: Plugin
 plugin = PreParseTransform processPage

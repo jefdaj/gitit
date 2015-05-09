@@ -1,4 +1,4 @@
-module Network.Gitit.Plugin.CiteProcBlock
+module Network.Gitit.Plugin.CiteProc
   where
 
 {- This plugin processes bibtex citations using pandoc-citeproc.
