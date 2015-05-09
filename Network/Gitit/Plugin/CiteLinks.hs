@@ -1,4 +1,4 @@
-module Network.Gitit.Plugin.CitePage
+module Network.Gitit.Plugin.CiteLinks
   where
 
 {- This plugin supports keeping notes in the style used by Caleb McDaniel
@@ -21,22 +21,16 @@ module Network.Gitit.Plugin.CitePage
  -
  - Other bibtex is allowed too and will be ignored (or hopefully passed on
  - to my CiteProc plugin!)
+ -
+ - TODO rewrite documentation for just the second part
  -}
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteProc (separateBibliography, readBibliography)
 
 import Control.Exception  (try, SomeException)
 import Data.FileStore     (Resource(FSFile, FSDirectory), directory)
 import Data.List          (intercalate)
-import Data.Map           (union, fromList)
 import System.FilePath    (takeBaseName)
-import Text.CSL.Reference (Reference, refId, titleShort, unLiteral)
-import Text.CSL.Style     (unFormatted)
-
-----------------------
--- shared utilities --
-----------------------
 
 -- TODO is this available from the Interface already?
 askName :: PluginM FilePath
@@ -44,46 +38,6 @@ askName = do
   req <- askRequest
   let base = takeBaseName $ rqUri req
   return base
-
---------------------
--- set page title --
---------------------
-
-getBibliography :: Pandoc -> PluginM [Reference]
-getBibliography doc = do
-  let (_, bib) = separateBibliography doc
-  bib' <- readBibliography bib
-  return bib'
-
-setPageTitle :: Pandoc -> PluginM Pandoc
-setPageTitle doc@(Pandoc m bs) = do
-  bib  <- getBibliography doc
-  meta <- askMeta
-  case lookup "title" meta of
-    Just _ -> return doc
-    Nothing -> do
-      name <- askName
-      let titles = map keyAndTitle bib
-          title  = lookup name titles
-      case title of
-        Nothing -> return doc
-        Just t  -> do
-          let old  = unMeta m
-              new  = fromList [("title", MetaInlines t)]
-              both = Meta {unMeta = union new old}
-              doc' = Pandoc both bs
-          return doc'
-
--- I couldn't figure out getReference Locators, so I worked around them
-keyAndTitle :: Reference -> (String, [Inline])
-keyAndTitle r = (unId r, unTitle r)
-  where
-    unId    = unLiteral   . refId
-    unTitle = unFormatted . titleShort
-
---------------------
--- link citations --
---------------------
 
 resPath :: Resource -> FilePath
 resPath (FSFile      f) = f
@@ -112,34 +66,30 @@ isThisPage name1 = do
   name2 <- askName
   return $ name1 == name2
 
-processWord :: String -> PluginM String
-processWord ('@':name) = do
+replaceWord :: String -> PluginM String
+replaceWord ('@':name) = do
   page <- isPage     name
   this <- isThisPage name
   if page && (not this)
     then return ("[" ++ name ++ "](" ++ name ++ ")")
     else return ('@':name)
-processWord w = return w
+replaceWord w = return w
 
 -- TODO more elegant notation?
-processLine :: String -> PluginM String
-processLine line = do
+replaceInLine :: String -> PluginM String
+replaceInLine line = do
   let ws = words line
-  ws' <- mapM processWord ws
+  ws' <- mapM replaceWord ws
   let ws'' = unwords ws'
   return ws''
 
 -- TODO more elegant notation?
-processPage :: String -> PluginM String
-processPage file = do
+replaceInPage :: String -> PluginM String
+replaceInPage file = do
   let ls = lines file
-  ls' <- mapM processLine ls
+  ls' <- mapM replaceInLine ls
   let ls'' = unlines ls'
   return ls''
 
-----------
--- main --
-----------
-
 plugin :: Plugin
-plugin = PreParseTransform processPage
+plugin = PreParseTransform replaceInPage
