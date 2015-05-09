@@ -21,15 +21,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
 module Network.Gitit.Plugins ( loadPlugins )
-where
+  where
 
 import Network.Gitit.Types
+
 import qualified Network.Gitit.Plugin.CiteLinks as CiteLinks
 import qualified Network.Gitit.Plugin.CiteProc  as CiteProc
 import qualified Network.Gitit.Plugin.CiteTitle as CiteTitle
 import qualified Network.Gitit.Plugin.Csv       as Csv
 import qualified Network.Gitit.Plugin.Dot       as Dot
-import qualified Network.Gitit.Plugin.External as External
+import qualified Network.Gitit.Plugin.External  as External
 import qualified Network.Gitit.Plugin.Files     as Files
 
 loadPlugins :: [Plugin]

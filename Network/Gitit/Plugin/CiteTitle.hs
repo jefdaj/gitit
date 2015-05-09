@@ -18,12 +18,14 @@ import Network.Gitit.Interface
 import Network.Gitit.Plugin.CiteLinks (askName)
 import Network.Gitit.Plugin.CiteProc  (separateBibliography, readBibliography)
 
-import Data.Map           (union, fromList)
-import Text.CSL.Reference (Reference, refId, titleShort, unLiteral)
-import Text.CSL.Style     (unFormatted)
+import Data.Map            (union, fromList)
+import System.FilePath     (takeBaseName)
+import Text.CSL.Reference  (Reference, refId, titleShort, unLiteral)
+import Text.CSL.Style      (unFormatted)
 
-getBibliography :: Pandoc -> PluginM [Reference]
-getBibliography doc = do
+-- TODO put this in citelink?
+getRefs :: Pandoc -> PluginM [Reference]
+getRefs doc = do
   let (_, bib) = separateBibliography doc
   bib' <- readBibliography bib
   return bib'
@@ -35,21 +37,33 @@ keyAndTitle r = (unId r, unTitle r)
     unId    = unLiteral   . refId
     unTitle = unFormatted . titleShort
 
-setPageTitle :: Pandoc -> PluginM Pandoc
-setPageTitle doc@(Pandoc m bs) = do
-  refs <- getBibliography doc
+-- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
+setTitle :: Pandoc -> [Inline] -> Pandoc
+setTitle (Pandoc m bs) title = Pandoc m' bs
+  where
+    old = unMeta m
+    new = fromList [("title", MetaInlines title)]
+    m'  = Meta {unMeta = union new old}
+
+isBadTitle :: PluginM Bool
+isBadTitle = do
   meta <- askMeta
+  name <- askName
   case lookup "title" meta of
-    Just _  -> return doc
-    Nothing -> do
+    Nothing -> return True
+    Just t  -> return $ name == takeBaseName t
+
+decideTitle :: Pandoc -> PluginM Pandoc
+decideTitle doc = do
+  bad <- isBadTitle
+  if not bad
+    then return doc
+    else do
+      refs <- getRefs doc
       name <- askName
       case lookup name $ map keyAndTitle refs of
         Nothing -> return doc
-        Just t  -> return $ Pandoc m' bs
-          where
-            old = unMeta m
-            new = fromList [("title", MetaInlines t)]
-            m'  = Meta {unMeta = union new old}
+        Just t  -> return $ setTitle doc t
 
 plugin :: Plugin
-plugin = PageTransform setPageTitle
+plugin = PageTransform decideTitle

@@ -30,6 +30,7 @@ module Network.Gitit.Plugin.CiteProc
  - or http://github.com/citation-style-language/styles.
  -}
 
+-- TODO make sure it doesn't fail on invalid bibtex
 -- TODO report minor href bug with DOI urls in pandoc-citeproc
 -- TODO add custom PDF links from the bibtex branch
 

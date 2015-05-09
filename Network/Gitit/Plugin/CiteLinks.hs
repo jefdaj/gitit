@@ -24,7 +24,7 @@ import Data.List          (intercalate)
 import System.FilePath    (takeBaseName)
 
 -- TODO is this available from the Interface already?
-askName :: PluginM FilePath
+askName :: PluginM String
 askName = do
   req <- askRequest
   let base = takeBaseName $ rqUri req
