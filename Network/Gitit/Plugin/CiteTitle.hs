@@ -16,19 +16,12 @@ module Network.Gitit.Plugin.CiteTitle
 
 import Network.Gitit.Interface
 import Network.Gitit.Plugin.CiteLinks (askName)
-import Network.Gitit.Plugin.CiteProc  (separateBibliography, readBibliography)
+import Network.Gitit.Plugin.CiteProc  (getRefs)
 
 import Data.Map            (union, fromList)
 import System.FilePath     (takeBaseName)
 import Text.CSL.Reference  (Reference, refId, titleShort, unLiteral)
 import Text.CSL.Style      (unFormatted)
-
--- TODO put this in citelink?
-getRefs :: Pandoc -> PluginM [Reference]
-getRefs doc = do
-  let (_, bib) = separateBibliography doc
-  bib' <- readBibliography bib
-  return bib'
 
 -- I couldn't figure out getReference Locators, so I worked around them
 keyAndTitle :: Reference -> (String, [Inline])

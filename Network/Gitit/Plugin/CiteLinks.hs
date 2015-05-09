@@ -18,10 +18,10 @@ module Network.Gitit.Plugin.CiteLinks
 
 import Network.Gitit.Interface
 
-import Control.Exception  (try, SomeException)
-import Data.FileStore     (Resource(FSFile, FSDirectory), directory)
-import Data.List          (intercalate)
-import System.FilePath    (takeBaseName)
+import Control.Exception (try, SomeException)
+import Data.FileStore    (Resource(FSFile, FSDirectory), directory)
+import Data.List         (intercalate)
+import System.FilePath   (takeBaseName)
 
 -- TODO is this available from the Interface already?
 askName :: PluginM String
@@ -66,7 +66,7 @@ replaceWord ('@':name) = do
     else return ('@':name)
 replaceWord w = return w
 
--- TODO more elegant notation?
+-- TODO less ugly notation?
 replaceInLine :: String -> PluginM String
 replaceInLine line = do
   let ws = words line
@@ -74,7 +74,7 @@ replaceInLine line = do
   let ws'' = unwords ws'
   return ws''
 
--- TODO more elegant notation?
+-- TODO less ugly notation?
 replaceInPage :: String -> PluginM String
 replaceInPage file = do
   let ls = lines file

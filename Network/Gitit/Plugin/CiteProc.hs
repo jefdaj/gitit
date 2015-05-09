@@ -8,7 +8,8 @@ module Network.Gitit.Plugin.CiteProc
  - ~~~{ .bib }
  - @Book{ kerby1972,
  -   author = {Robert L. Kerby},
- -   title = {Kirby Smith's Confederacy: The Trans-{M}ississippi South, 1863--1865},
+ -   title = {Kirby Smith's Confederacy:
+ -            The Trans-{M}ississippi South, 1863--1865},
  -   address = {New York},
  -   publisher = {Columbia University Press},
  -   year = 1972,
@@ -35,6 +36,7 @@ module Network.Gitit.Plugin.CiteProc
 -- TODO add custom PDF links from the bibtex branch
 
 import Network.Gitit.Interface
+
 import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)
 import Text.CSL.Pandoc       (processCites)
@@ -49,8 +51,8 @@ isBibBlock _ = False
 blocksToString :: [Block] -> String
 blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
 
-separateBibliography :: Pandoc -> (Pandoc, Maybe String)
-separateBibliography (Pandoc meta blks) = (Pandoc meta blks', bib')
+extractRefs :: Pandoc -> (Pandoc, Maybe String)
+extractRefs (Pandoc meta blks) = (Pandoc meta blks', bib')
   where
     blks' = filter (not . isBibBlock) blks
     bib   = filter isBibBlock blks
@@ -58,14 +60,9 @@ separateBibliography (Pandoc meta blks) = (Pandoc meta blks', bib')
               then Nothing
               else Just $ blocksToString bib
 
-readCitationStyle :: PluginM Style
-readCitationStyle = do
-  cfg <- askConfig
-  sty <- liftIO $ readCSLFile Nothing $ citationStyle cfg
-  return sty
-
-readBibliography :: Maybe String -> PluginM [Reference]
-readBibliography blks = do
+-- starting from Maybe String lets you treat all ref sources the same
+parseRefs :: Maybe String -> PluginM [Reference]
+parseRefs blks = do
   conf <- askConfig
   meta <- askMeta
   txt <- liftIO $ head $ mapMaybe id
@@ -77,13 +74,25 @@ readBibliography blks = do
   bib <- liftIO $ readBibtexInputString True txt
   return bib
 
-processCiteBlocks :: Pandoc -> PluginM Pandoc
-processCiteBlocks doc = do
-  let (doc', bib) = separateBibliography doc
-  bib' <- readBibliography bib
-  sty  <- readCitationStyle
+getRefs :: Pandoc -> PluginM [Reference]
+getRefs doc = do
+  let (_, bib) = extractRefs doc
+  bib' <- parseRefs bib
+  return bib'
+
+parseStyle :: PluginM Style
+parseStyle = do
+  cfg <- askConfig
+  sty <- liftIO $ readCSLFile Nothing $ citationStyle cfg
+  return sty
+
+processDoc :: Pandoc -> PluginM Pandoc
+processDoc doc = do
+  let (doc', bib) = extractRefs doc
+  bib' <- parseRefs bib
+  sty  <- parseStyle
   let doc'' = processCites sty bib' doc'
   return doc''
 
 plugin :: Plugin
-plugin = PageTransform processCiteBlocks
+plugin = PageTransform processDoc
