@@ -17,7 +17,6 @@ import Network.Gitit.Plugin.CiteLinks (askName)
 import Network.Gitit.Plugin.CiteProc  (getRefs)
 
 import Data.Map            (insert)
-import System.FilePath     (takeBaseName)
 import Text.CSL.Reference  (Reference, refId, title, unLiteral)
 import Text.CSL.Style      (unFormatted)
 
@@ -36,37 +35,14 @@ setTitle (Pandoc m bs) t = Pandoc m' bs
     new = insert "title" (MetaInlines t) old
     m'  = Meta {unMeta = new}
 
-isBadTitle :: PluginM Bool
-isBadTitle = do
-  meta <- askMeta
-  name <- askName
-  case lookup "title" meta of
-    Nothing -> return True
-    Just t  -> return $ name == takeBaseName t
-
-decideTitle :: Pandoc -> PluginM Pandoc
-decideTitle doc = do
-  bad <- isBadTitle
-  if not bad
-    then return doc
-    else do
-      refs <- getRefs doc
-      name <- askName
-      case lookup name $ map keyAndTitle refs of
-        Nothing -> return doc
-        Just [] -> return doc
-        Just t  -> return $ setTitle doc t
-
-decideTitle2 :: Pandoc -> PluginM Pandoc
-decideTitle2 doc = do
+setTitleIfNeeded :: Pandoc -> PluginM Pandoc
+setTitleIfNeeded doc = do
   name <- askName
   refs <- getRefs doc
   let rmap = map keyAndTitle refs
   case lookup name rmap of
     Nothing -> return doc
-    Just t  -> do
-      let doc' = setTitle doc t
-      return doc'
+    Just t  -> return $ setTitle doc t
 
 plugin :: Plugin
-plugin = PageTransform decideTitle2
+plugin = PageTransform setTitleIfNeeded
