@@ -182,9 +182,9 @@ data Config = Config {
   useFeed              :: Bool,
   -- | Base URL of wiki, for use in feed
   baseUrl              :: String,
-  -- | Title of wiki, used in feed
-  useAbsoluteUrls      :: Bool,
   -- | Should WikiLinks be absolute w.r.t. the base URL?
+  useAbsoluteUrls      :: Bool,
+  -- | Title of wiki, used in feed
   wikiTitle            :: String,
   -- | Number of days history to be included in feed
   feedDays             :: Integer,
