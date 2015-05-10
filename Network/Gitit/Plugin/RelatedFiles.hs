@@ -1,4 +1,4 @@
-module Network.Gitit.Plugin.CiteFiles
+module Network.Gitit.Plugin.RelatedFiles
   where
 
 {- This plugin supports keeping notes in the style used by Caleb McDaniel
