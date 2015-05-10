@@ -1,13 +1,14 @@
 module Network.Gitit.Plugin.Files (plugin) where
 
-import Control.Exception (try, SomeException)
-import Data.Either
-import Data.FileStore (Resource(FSFile, FSDirectory), directory)
-import Data.List (intercalate, isInfixOf, sort)
-import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
 
+import Data.Either
+import Data.FileStore (Resource)
+import Data.List      (intercalate, isInfixOf, sort)
+import Data.Maybe     (fromMaybe)
+
 -- TODO when listing pages, use their titles if possible (have a flag)
+-- TODO see how much of this can go in the Interface
 
 -- This plugin allows you to include a list of files
 -- in a page. It's similar to "All pages" index,
@@ -20,7 +21,7 @@ import Network.Gitit.Interface
 -- whose names include `.png` or `.jpg` but not `bad`,
 -- sorted in reverse alphabetical order:
 --
--- ~~~ { .files dir="dir1" sort="reverse" }
+-- ~~~{ .files dir="dir1" sort="reverse" }
 -- + .png
 -- + .jpg
 -- - bad
@@ -68,32 +69,9 @@ order "forward" = Right Forward
 order "reverse" = Right Reverse
 order s = Left $ "error: '" ++ s ++ "' is not a valid ordering"
 
-ordered :: Ord a => SortOrder -> [a] -> [a]
+ordered :: Ord a => SortOrder -> ([a] -> [a])
 ordered Forward = sort
 ordered Reverse = reverse . sort
-
-
-------------------------
--- work with FilePaths
-------------------------
-
-listFiles :: FilePath -> PluginM [Resource]
-listFiles dir = do
-  fs  <- askFileStore
-  res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
-  case res of
-    Left  _     -> return []
-    Right files -> return files
-
-resPath :: Resource -> FilePath
-resPath (FSFile      f) = f
-resPath (FSDirectory d) = d
-
-reqDir :: Request -> FilePath
-reqDir = intercalate "/" . init . rqPaths
-
-render :: String -> [Resource] -> String
-render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
 
 
 -----------------------------------

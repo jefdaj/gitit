@@ -15,10 +15,8 @@ module Network.Gitit.Plugin.CiteProcTitle
  -}
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteLinks (askName)
 import Network.Gitit.Plugin.CiteProc  (getRefs)
 
-import Data.Map            (insert)
 import Text.CSL.Reference  (Reference, refId, title, unLiteral)
 import Text.CSL.Style      (unFormatted)
 
@@ -28,14 +26,6 @@ keyAndTitle r = (unId r, unTitle r)
   where
     unId    = unLiteral   . refId
     unTitle = unFormatted . title
-
--- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
-setTitle :: Pandoc -> [Inline] -> Pandoc
-setTitle (Pandoc m bs) t = Pandoc m' bs
-  where
-    old = unMeta m
-    new = insert "title" (MetaInlines t) old
-    m'  = Meta {unMeta = new}
 
 setTitleIfNeeded :: Pandoc -> PluginM Pandoc
 setTitleIfNeeded doc = do

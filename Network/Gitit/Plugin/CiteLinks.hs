@@ -18,46 +18,6 @@ module Network.Gitit.Plugin.CiteLinks
 
 import Network.Gitit.Interface
 
-import Control.Exception (try, SomeException)
-import Data.FileStore    (Resource(FSFile, FSDirectory), directory)
-import Data.List         (intercalate)
-import System.FilePath   (takeBaseName)
-
--- TODO is this available from the Interface already?
--- TODO move to utilities
-askName :: PluginM String
-askName = do
-  req <- askRequest
-  let base = takeBaseName $ rqUri req
-  return base
-
-resPath :: Resource -> FilePath
-resPath (FSFile      f) = f
-resPath (FSDirectory d) = d
-
-reqDir :: Request -> FilePath
-reqDir = intercalate "/" . init . rqPaths
-
-askFiles :: PluginM [FilePath]
-askFiles = do
-  fs  <- askFileStore
-  req <- askRequest
-  let dir = reqDir req
-  res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
-  case res of
-    Left  _     -> return []
-    Right files -> return $ map (takeBaseName . resPath) files
-
-isPage :: FilePath -> PluginM Bool
-isPage name = do
-  files <- askFiles
-  return $ name `elem` (map takeBaseName files)
-
-isThisPage :: FilePath -> PluginM Bool
-isThisPage name1 = do
-  name2 <- askName
-  return $ name1 == name2
-
 replaceWord :: String -> PluginM String
 replaceWord ('@':name) = do
   page <- isPage     name

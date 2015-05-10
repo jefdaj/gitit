@@ -25,43 +25,9 @@ module Network.Gitit.Plugin.RelatedFiles
 
 import Network.Gitit.Interface
 
-import Control.Exception (try, SomeException)
-import Data.FileStore    (Resource(FSFile, FSDirectory), directory)
-import Data.List         (intercalate, isPrefixOf)
-import System.FilePath   (takeBaseName, addExtension, splitExtension)
-
-askName :: PluginM String
-askName = do
-  req <- askRequest
-  let base = takeBaseName $ rqUri req
-  return base
-
-listFiles :: FilePath -> PluginM [Resource]
-listFiles dir = do
-  fs  <- askFileStore
-  res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
-  case res of
-    Left  _     -> return []
-    Right files -> return files
-
-resPath :: Resource -> FilePath
-resPath (FSFile      f) = f
-resPath (FSDirectory d) = d
-
-reqDir :: Request -> FilePath
-reqDir = intercalate "/" . init . rqPaths
-
--- TODO move to utilities?
-render :: String -> [Resource] -> String
-render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
-
-renderFiles :: String -> [String] -> [Block]
-renderFiles _ [] = []
-renderFiles p fs = [header, html]
-  where
-    rs     = map FSFile fs
-    html   = RawBlock (Format "html") (render p rs)
-    header = Para [Str "Related files:"]
+import Data.FileStore  (Resource(FSFile))
+import Data.List       (isPrefixOf)
+import System.FilePath (addExtension, splitExtension)
 
 -- TODO don't assume .page?
 isRelatedTo :: FilePath -> FilePath -> Bool
@@ -79,7 +45,7 @@ processDoc (Pandoc m bs) = do
   let d = reqDir r
   fs <- listFiles d
   let ss = filter (isRelatedTo n) (map resPath fs)
-      rs = renderFiles (d ++ "/") ss
+      rs = renderFiles "Related files:" (d ++ "/") ss
   return $ Pandoc m (rs ++ bs)
 
 plugin :: Plugin

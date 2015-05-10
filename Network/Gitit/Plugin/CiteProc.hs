@@ -48,9 +48,6 @@ isBibBlock :: Block -> Bool
 isBibBlock (CodeBlock (_,cs,_) _) = "bib" `elem` cs
 isBibBlock _ = False
 
-blocksToString :: [Block] -> String
-blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
-
 extractRefs :: Pandoc -> (Pandoc, Maybe String)
 extractRefs (Pandoc meta blks) = (Pandoc meta blks', bib')
   where
