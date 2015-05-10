@@ -10,6 +10,8 @@ module Network.Gitit.Plugin.CiteTitle
  - It required adding some logic to Network.Gitit.ContentTransformer to
  - apply titles; the old code set them before creating the Pandoc and then
  - didn't check if a title was added afterward.
+ -
+ - TODO what will/should happen if you don't cite the paper in the page?
  -}
 
 import Network.Gitit.Interface
