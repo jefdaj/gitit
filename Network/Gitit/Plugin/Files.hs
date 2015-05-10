@@ -1,4 +1,4 @@
-module Network.Gitit.Plugin.Files (plugin) where
+module Network.Gitit.Plugin.Files where
 
 import Network.Gitit.Interface
 
@@ -10,27 +10,23 @@ import Data.Maybe     (fromMaybe)
 -- TODO when listing pages, use their titles if possible (have a flag)
 -- TODO see how much of this can go in the Interface
 
--- This plugin allows you to include a list of files
--- in a page. It's similar to "All pages" index,
--- but more flexible because you can filter the results
--- and show different subsets of your files,
--- maybe with separate explanations.
--- You can also reverse the sort order.
---
--- For example, this would list files in `dir1`
--- whose names include `.png` or `.jpg` but not `bad`,
--- sorted in reverse alphabetical order:
---
--- ~~~{ .files dir="dir1" sort="reverse" }
--- + .png
--- + .jpg
--- - bad
--- ~~~
---
--- If no `dir` attribute is given it defaults to the dirname
--- of the current page. If no 'sort' attribute is given
--- it defaults to 'forward'. If the block is empty it matches all files.
-
+{- This plugin allows you to include a list of files in a page. It's
+ - similar to "All pages" index, but more flexible because you can filter
+ - the results and show different subsets of your files, maybe with
+ - separate explanations. You can also reverse the sort order. For example,
+ - this would list files in `dir1` whose names include `.png` or `.jpg` but
+ - not `bad`, sorted in reverse alphabetical order:
+ -
+ - ~~~{ .files dir="dir1" sort="reverse" }
+ - + .png
+ - + .jpg
+ - - bad
+ - ~~~
+ -
+ - If no `dir` attribute is given it defaults to the dirname of the current
+ - page. If no 'sort' attribute is given it defaults to 'forward'. If the
+ - block is empty it matches all files.
+ -}
 
 ----------------------
 -- main Gitit plugin
@@ -57,7 +53,6 @@ transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
   return $ RawBlock (Format "html") html
 transformBlock x = return x
 
-
 -------------------------
 -- work with SortOrders
 -------------------------
@@ -72,7 +67,6 @@ order s = Left $ "error: '" ++ s ++ "' is not a valid ordering"
 ordered :: Ord a => SortOrder -> ([a] -> [a])
 ordered Forward = sort
 ordered Reverse = reverse . sort
-
 
 -----------------------------------
 -- filter Resources by Conditions

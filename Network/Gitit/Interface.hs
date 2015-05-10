@@ -136,6 +136,7 @@ module Network.Gitit.Interface ( Plugin(..)
                                , module Text.Pandoc.Definition
                                , module Text.Pandoc.Generic
 
+                               -- TODO clean these up and add Haddock docs
                                , blocksToString
                                , setTitle
                                , askName
