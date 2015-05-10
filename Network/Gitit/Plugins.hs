@@ -28,7 +28,7 @@ import Network.Gitit.Types
 import qualified Network.Gitit.Plugin.CiteFiles as CiteFiles
 import qualified Network.Gitit.Plugin.CiteLinks as CiteLinks
 import qualified Network.Gitit.Plugin.CiteProc  as CiteProc
-import qualified Network.Gitit.Plugin.CiteTitle as CiteTitle
+import qualified Network.Gitit.Plugin.CiteProcTitle as CiteProcTitle
 import qualified Network.Gitit.Plugin.Csv       as Csv
 import qualified Network.Gitit.Plugin.Dot       as Dot
 import qualified Network.Gitit.Plugin.External  as External
@@ -39,7 +39,7 @@ loadPlugins :: [Plugin]
 loadPlugins =
   [ CiteFiles.plugin
   , CiteLinks.plugin
-  , CiteTitle.plugin -- needs to be applied after (above) CiteProc
+  , CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
   , CiteProc.plugin
   , Csv.plugin
   , Dot.plugin

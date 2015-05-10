@@ -1,4 +1,4 @@
-module Network.Gitit.Plugin.CiteTitle
+module Network.Gitit.Plugin.CiteProcTitle
   where
 
 {- This plugin supports keeping notes in the style used by Caleb McDaniel
