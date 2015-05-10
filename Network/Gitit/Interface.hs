@@ -99,6 +99,15 @@ you can also find them in the directory
 @CABALDIR\/share\/gitit-X.Y.Z\/plugins@, where @CABALDIR@ is the cabal
 install directory and @X.Y.Z@ is the version number of gitit.
 
+TODO add duplicated functions here as utilities:
+  askFile
+  askName
+  link2path
+  listFiles
+  reqDir (that's somewhere already right?)
+  render (but rename it)
+  resPath?
+  uri2path
 -}
 
 module Network.Gitit.Interface ( Plugin(..)

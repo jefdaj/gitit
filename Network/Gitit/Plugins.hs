@@ -25,24 +25,28 @@ module Network.Gitit.Plugins ( loadPlugins )
 
 import Network.Gitit.Types
 
-import qualified Network.Gitit.Plugin.RelatedFiles as RelatedFiles
-import qualified Network.Gitit.Plugin.CiteLinks as CiteLinks
-import qualified Network.Gitit.Plugin.CiteProc  as CiteProc
+import qualified Network.Gitit.Plugin.RelatedFiles  as RelatedFiles
+import qualified Network.Gitit.Plugin.CiteLinks     as CiteLinks
+import qualified Network.Gitit.Plugin.CiteProc      as CiteProc
 import qualified Network.Gitit.Plugin.CiteProcTitle as CiteProcTitle
-import qualified Network.Gitit.Plugin.Csv       as Csv
-import qualified Network.Gitit.Plugin.Dot       as Dot
-import qualified Network.Gitit.Plugin.External  as External
-import qualified Network.Gitit.Plugin.Files     as Files
+import qualified Network.Gitit.Plugin.Csv           as Csv
+import qualified Network.Gitit.Plugin.Dot           as Dot
+import qualified Network.Gitit.Plugin.External      as External
+import qualified Network.Gitit.Plugin.Files         as Files
 
 -- TODO unify the two "fancy" citation plugins (along with pdf links?)
 loadPlugins :: [Plugin]
 loadPlugins =
-  [ RelatedFiles.plugin
-  , CiteLinks.plugin
-  , CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
+
+  -- PageTransform plugins
+  [ CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
   , CiteProc.plugin
   , Csv.plugin
   , Dot.plugin
   , External.plugin
   , Files.plugin
+  , RelatedFiles.plugin
+
+  -- PreParseTransform plugins
+  , CiteLinks.plugin
   ]
