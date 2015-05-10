@@ -255,6 +255,7 @@ listFiles dir = do
     Left  _     -> return []
     Right files -> return files
 
+-- TODO if you export this, don't need fileListToHtmlNoUplink?
 render :: String -> [Resource] -> String
 render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
 

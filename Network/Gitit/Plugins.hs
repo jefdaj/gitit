@@ -34,7 +34,6 @@ import qualified Network.Gitit.Plugin.Dot           as Dot
 import qualified Network.Gitit.Plugin.External      as External
 import qualified Network.Gitit.Plugin.Files         as Files
 
--- TODO unify the two "fancy" citation plugins (along with pdf links?)
 loadPlugins :: [Plugin]
 loadPlugins =
 

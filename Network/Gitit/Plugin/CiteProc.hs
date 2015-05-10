@@ -34,6 +34,8 @@ module Network.Gitit.Plugin.CiteProc
 -- TODO make sure it doesn't fail on invalid bibtex
 -- TODO report minor href bug with DOI urls in pandoc-citeproc
 -- TODO add custom PDF links from the bibtex branch
+-- TODO add a section for plugins to the config file,
+--      then use it for the citeproc stuff to start out
 
 import Network.Gitit.Interface
 

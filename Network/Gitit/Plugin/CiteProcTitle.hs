@@ -12,13 +12,15 @@ module Network.Gitit.Plugin.CiteProcTitle
  - didn't check if a title was added afterward.
  -
  - TODO what will/should happen if you don't cite the paper in the page?
+ - TODO document that this depends on having CiteProc imported + applied
+ - TODO also add other fields below title? (author, publisher, year)
  -}
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteProc  (getRefs)
+import Network.Gitit.Plugin.CiteProc (getRefs)
 
-import Text.CSL.Reference  (Reference, refId, title, unLiteral)
-import Text.CSL.Style      (unFormatted)
+import Text.CSL.Reference (Reference, refId, title, unLiteral)
+import Text.CSL.Style     (unFormatted)
 
 -- I couldn't figure out getReference Locators, so I worked around them
 keyAndTitle :: Reference -> (String, [Inline])
