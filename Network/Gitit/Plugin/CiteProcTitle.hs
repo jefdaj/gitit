@@ -29,14 +29,19 @@ keyAndTitle r = (unId r, unTitle r)
     unId    = unLiteral   . refId
     unTitle = unFormatted . title
 
-setTitleIfNeeded :: Pandoc -> PluginM Pandoc
-setTitleIfNeeded doc = do
+getThisRef :: Pandoc -> PluginM (Maybe [Inline])
+getThisRef doc = do
   name <- askName
   refs <- getRefs doc
   let rmap = map keyAndTitle refs
-  case lookup name rmap of
+  return $ lookup name rmap
+
+setTitleIfNeeded :: Pandoc -> PluginM Pandoc
+setTitleIfNeeded doc = do
+  ref <- getThisRef doc
+  case ref of
     Nothing -> return doc
-    Just t  -> return $ setTitle doc t
+    Just r  -> return $ setTitle doc r
 
 plugin :: Plugin
 plugin = PageTransform setTitleIfNeeded
