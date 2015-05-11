@@ -29,8 +29,10 @@ keyAndTitle r = (unId r, unTitle r)
     unId    = unLiteral   . refId
     unTitle = unFormatted . title
 
-getThisRef :: Pandoc -> PluginM (Maybe [Inline])
-getThisRef doc = do
+-- TODO have just getThisRef, and exract the title afterward?
+--      (so you can get the other stuff too maybe)
+getThisTitle :: Pandoc -> PluginM (Maybe [Inline])
+getThisTitle doc = do
   name <- askName
   refs <- getRefs doc
   let rmap = map keyAndTitle refs
@@ -38,7 +40,7 @@ getThisRef doc = do
 
 setTitleIfNeeded :: Pandoc -> PluginM Pandoc
 setTitleIfNeeded doc = do
-  ref <- getThisRef doc
+  ref <- getThisTitle doc
   case ref of
     Nothing -> return doc
     Just r  -> return $ setTitle doc r
