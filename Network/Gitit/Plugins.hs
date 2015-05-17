@@ -40,12 +40,10 @@ loadPlugins =
   -- PageTransform plugins
   [ CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
   , CiteProc.plugin
+  , CiteLinks.plugin -- needs to be applied before (below) CiteProc
   , Csv.plugin
   , Dot.plugin
   , External.plugin
   , Files.plugin
   , RelatedFiles.plugin
-
-  -- PreParseTransform plugins
-  , CiteLinks.plugin
   ]
