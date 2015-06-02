@@ -11,8 +11,11 @@ module Network.Gitit.Plugin.CiteLinks
  - page. The idea is that if you already wrote notes you probably want to
  - go review them instead of jumping to the original source.
  -
- - Citations of the current source are ignored. Other bibtex is allowed
- - and will also be ignored (or hopefully passed on to my CiteProc plugin!)
+ - Citations of the current page are ignored. Other bibtex is allowed and
+ - will also be ignored (then hopefully passed on to my CiteProc plugin!)
+ -
+ - TODO need to identify links however CiteProc does it?
+ -      it's not just a simple @ followed by letters
  -}
 
 import Network.Gitit.Interface
@@ -20,14 +23,11 @@ import Network.Gitit.Interface
 plugin :: Plugin
 plugin = mkPageTransformM citeLinks
 
-linkTo :: String -> Inline
-linkTo name = Str $ "[" ++ name ++ "](" ++ name ++ ")"
-
 citeLinks :: Inline -> PluginM Inline
 citeLinks s@(Str ('@':name)) = do
   page <- isPage     name
   this <- isThisPage name
   if page && (not this)
-    then return $ linkTo name
+    then return $ Link [Str name] (name, name)
     else return s
 citeLinks x = return x
