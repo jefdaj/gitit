@@ -131,16 +131,16 @@ createDefaultPages conf = do
                                              else writerExtensions def
                      }
         -- note: we convert this (markdown) to the default page format
-        converter = handleError . runPure . case pt of
-                       Markdown   -> return
-                       LaTeX      -> writeLaTeX defOpts <=< toPandoc
-                       HTML       -> writeHtml5String defOpts <=< toPandoc
-                       RST        -> writeRST defOpts <=< toPandoc
-                       Textile    -> writeTextile defOpts <=< toPandoc
-                       Org        -> writeOrg defOpts <=< toPandoc
-                       DocBook    -> writeDocbook5 defOpts <=< toPandoc
-                       MediaWiki  -> writeMediaWiki defOpts <=< toPandoc
-                       CommonMark -> writeCommonMark defOpts <=< toPandoc
+        converter = case pt of
+                       Markdown   -> id
+                       CommonMark -> writeCommonMark defOpts . toPandoc
+                       LaTeX      -> writeLaTeX defOpts . toPandoc
+                       HTML       -> writeHtmlString defOpts . toPandoc
+                       RST        -> writeRST defOpts . toPandoc
+                       Textile    -> writeTextile defOpts . toPandoc
+                       Org        -> writeOrg defOpts . toPandoc
+                       DocBook    -> writeDocbook defOpts . toPandoc
+                       MediaWiki  -> writeMediaWiki defOpts . toPandoc
 
     welcomepath <- getDataFileName $ "data" </> "FrontPage" <.> "page"
     welcomecontents <- converter =<< readFileUTF8 welcomepath
