@@ -100,7 +100,6 @@ parsePageType s =
        "markdown"     -> (Markdown,False)
        "markdown+lhs" -> (Markdown,True)
        "commonmark"   -> (CommonMark,False)
-       "docbook"      -> (DocBook,False)
        "rst"          -> (RST,False)
        "rst+lhs"      -> (RST,True)
        "html"         -> (HTML,False)
