@@ -133,7 +133,6 @@ createDefaultPages conf = do
         -- note: we convert this (markdown) to the default page format
         converter = case pt of
                        Markdown   -> id
-                       CommonMark -> writeCommonMark defOpts . toPandoc
                        LaTeX      -> writeLaTeX defOpts . toPandoc
                        HTML       -> writeHtmlString defOpts . toPandoc
                        RST        -> writeRST defOpts . toPandoc
@@ -141,6 +140,11 @@ createDefaultPages conf = do
                        Org        -> writeOrg defOpts . toPandoc
                        DocBook    -> writeDocbook defOpts . toPandoc
                        MediaWiki  -> writeMediaWiki defOpts . toPandoc
+#if MIN_VERSION_pandoc(1,14,0)
+                       CommonMark -> writeCommonMark defOpts . toPandoc
+#else
+                       CommonMark -> error "CommonMark support requires pandoc >= 1.14"
+#endif
 
     welcomepath <- getDataFileName $ "data" </> "FrontPage" <.> "page"
     welcomecontents <- converter =<< readFileUTF8 welcomepath
