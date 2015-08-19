@@ -1,7 +1,7 @@
 cabal-version:       2.0
 name:                gitit
-version:             0.11.1.1
-Cabal-version:       >= 1.6
+version:             0.12
+Cabal-version:       >= 1.8
 build-type:          Simple
 synopsis:            Wiki using happstack, git or darcs, and pandoc.
 description:         Gitit is a wiki backed by a git, darcs, or mercurial
@@ -116,42 +116,26 @@ Library
                      Network.Gitit.Authentication.Github,
                      Network.Gitit.Util, Network.Gitit.Server
                      Network.Gitit.Cache, Network.Gitit.State,
-                     Network.Gitit.Export,
+                     Paths_gitit, Network.Gitit.Export,
                      Network.Gitit.Handlers,
                      Network.Gitit.Plugins, Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
                      Network.Gitit.Compat.Except
-  if flag(plugins)
-    exposed-modules: Network.Gitit.Interface
-    build-depends:   ghc, ghc-paths
-    cpp-options:     -D_PLUGINS
-  build-depends:     base >= 3, pandoc >= 1.12.4 && < 1.16,
-                     pandoc-types >= 1.12.3 && < 1.13, filepath, safe
-  extensions:        CPP
-  if impl(ghc >= 6.12)
-    ghc-options:     -Wall -fno-warn-unused-do-bind
-  else
-    ghc-options:     -Wall
-  ghc-prof-options:  -fprof-auto-exported -rtsopts
-
-Executable           gitit
-  hs-source-dirs:    .
-  main-is:           gitit.hs
-  build-depends:     base >=3 && < 5,
+  build-depends:     base >= 3 && < 5,
+                     filepath,
+                     safe,
                      parsec,
                      pretty,
                      xhtml,
                      containers,
-                     pandoc >= 1.12.4 && < 1.16,
-                     pandoc-types >= 1.12.3 && < 1.13,
                      process,
                      filepath,
                      directory,
                      mtl,
                      old-time,
-                     pandoc >= 2.9 && < 2.10,
-                     pandoc-types >= 1.20 && < 1.21,
-                     skylighting >= 0.8.2.3 && < 0.9,
+                     pandoc >= 1.12.4 && < 1.16,
+                     pandoc-types >= 1.12.3 && < 1.13,
+                     highlighting-kate >= 0.5.0.1 && < 0.7,
                      bytestring,
                      text,
                      random,
@@ -192,10 +176,12 @@ Executable           gitit
     exposed-modules: Network.Gitit.Interface
     build-depends:   ghc, ghc-paths
     cpp-options:     -D_PLUGINS
-  default-extensions: CPP
-  default-language:  Haskell2010
-  ghc-options:       -Wall -fno-warn-unused-do-bind
-  ghc-prof-options:  -fprof-auto-exported
+  extensions:        CPP
+  if impl(ghc >= 6.12)
+    ghc-options:     -Wall -fno-warn-unused-do-bind
+  else
+    ghc-options:     -Wall
+  ghc-prof-options:  -fprof-auto-exported -rtsopts
 
 Executable           gitit
   hs-source-dirs:    .
@@ -205,22 +191,28 @@ Executable           gitit
                      mtl,
                      hslogger,
                      bytestring,
-                     text,
                      utf8-string,
-                     directory,
-                     network-uri >= 2.6,
-                     network >= 2.6
-  other-modules:     Paths_gitit
-  default-extensions: CPP
-  default-language:  Haskell2010
-  ghc-options:       -Wall -threaded -fno-warn-unused-do-bind
+                     directory
+  if flag(network-uri)
+    build-depends:   network-uri >= 2.6 && < 2.7, network >= 2.6
+  else
+    build-depends:   network >= 2 && < 2.6
+  extensions:        CPP
+  if impl(ghc >= 6.12)
+    ghc-options:     -Wall -threaded -fno-warn-unused-do-bind
+  else
+    ghc-options:     -Wall -threaded
   ghc-prof-options:  -fprof-auto-exported -rtsopts
 
 Executable           expireGititCache
   hs-source-dirs:    .
   main-is:           expireGititCache.hs
-  build-depends:     base >= 4.9 && < 5, HTTP, url, filepath, syb,
-                     network-uri >= 2.6,
-                     network >= 2.6
+  build-depends:     base >=3 && < 5, HTTP, url, filepath
+  if flag(network-uri)
+    build-depends:   network-uri >= 2.6 && < 2.7, network >= 2.6
+  else
+    build-depends:   network >= 2 && < 2.6
+  if impl(ghc >= 6.10)
+    build-depends:   base >= 4, syb
   ghc-options:       -Wall
   default-language:  Haskell2010
