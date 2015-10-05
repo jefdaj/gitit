@@ -117,7 +117,8 @@ Library
                      Network.Gitit.Cache, Network.Gitit.State,
                      Paths_gitit, Network.Gitit.Export,
                      Network.Gitit.Handlers,
-                     Network.Gitit.Plugins, Network.Gitit.Plugins.Dot, Network.Gitit.Rpxnow,
+                     Network.Gitit.Plugins, Network.Gitit.Plugins.Dot,
+                     Network.Gitit.Plugins.Files, Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
                      Network.Gitit.Compat.Except
   build-depends:     base >= 3 && < 5,
