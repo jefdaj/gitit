@@ -20,60 +20,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 {- Functions for loading plugins.
 -}
 
-module Network.Gitit.Plugins ( loadPlugin, loadPlugins )
-where
-import Network.Gitit.Types
-import System.FilePath (takeBaseName)
-import Control.Monad (unless)
-import System.Log.Logger (logM, Priority(..))
-#ifdef _PLUGINS
-import Data.List (isInfixOf, isPrefixOf)
-import GHC
-import GHC.Paths
-import Unsafe.Coerce
+module Network.Gitit.Plugins ( loadPlugins )
+  where
 
-loadPlugin :: FilePath -> IO Plugin
-loadPlugin pluginName = do
-  logM "gitit" WARNING ("Loading plugin '" ++ pluginName ++ "'...")
-  runGhc (Just libdir) $ do
-    dflags <- getSessionDynFlags
-    setSessionDynFlags dflags
-    defaultCleanupHandler dflags $ do
-      -- initDynFlags
-      unless ("Network.Gitit.Plugin." `isPrefixOf` pluginName)
-        $ do
-            addTarget =<< guessTarget pluginName Nothing
-            r <- load LoadAllTargets
-            case r of
-              Failed -> error $ "Error loading plugin: " ++ pluginName
-              Succeeded -> return ()
-      let modName =
-            if "Network.Gitit.Plugin" `isPrefixOf` pluginName
-               then pluginName
-               else if "Network/Gitit/Plugin/" `isInfixOf` pluginName
-                       then "Network.Gitit.Plugin." ++ takeBaseName pluginName
-                       else takeBaseName pluginName
-      pr <- parseImportDecl "import Prelude"
-      i <- parseImportDecl "import Network.Gitit.Interface"
-      m <- parseImportDecl ("import " ++ modName)
-      setContext [IIDecl m, IIDecl  i, IIDecl pr]
-      value <- compileExpr (modName ++ ".plugin :: Plugin")
-      let value' = (unsafeCoerce value) :: Plugin
-      return value'
-
-#else
-
-loadPlugin :: FilePath -> IO Plugin
-loadPlugin pluginName = do
-  error $ "Cannot load plugin '" ++ pluginName ++
-          "'. gitit was not compiled with plugin support."
-  return undefined
-
-#endif
-
-loadPlugins :: [FilePath] -> IO [Plugin]
-loadPlugins pluginNames = do
-  plugins' <- mapM loadPlugin pluginNames
-  unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
-  return plugins'
-
+loadPlugins :: [Plugin]
+loadPlugins = []
