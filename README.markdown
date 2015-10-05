@@ -1,6 +1,17 @@
 Gitit
 =====
 
-My fork of [gitit](https://github.com/jgm/gitit).
-This is the master branch, which is messy and consists of all my changes jumbled together.
-They can be found separately in the `feat/*` and `pullreq/*` branches.
+Build files for the Nix package manager.
+Rebase from the `upstream` branch.
+
+Use `nix-build` to build the gitit binaries, or `nix-shell`
+to enter a shell with preinstalled dependencies suitable for hacking.
+Note that the shell doesn't include its own cabal-install.
+To build inside the shell, do:
+
+    nix-shell
+    cabal update
+    cabal configure
+    cabal build
+
+Or you can substitute `cabal repl` at the end.
