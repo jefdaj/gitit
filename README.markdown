@@ -2,7 +2,7 @@ feat/nix-build
 ==============
 
 Build files for the Nix package manager.
-Rebase from the latest [upstream release](https://github.com/jgm/gitit/releases).
+Rebase from the `upstream` branch.
 
 Use `nix-build` to build the gitit binaries, or `nix-shell`
 to enter a shell with preinstalled dependencies suitable for hacking.
