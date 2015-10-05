@@ -84,6 +84,15 @@ data-files:          data/static/css/screen.css, data/static/css/print.css,
                      data/markupHelp/RST, data/markupHelp/RST+LHS,
                      data/markupHelp/LaTeX, data/markupHelp/LaTeX+LHS,
                      data/markupHelp/HTML, data/markupHelp/Org,
+                     plugins/CapitalizeEmphasis.hs,
+                     plugins/PigLatin.hs,
+                     plugins/ImgTex.hs,
+                     plugins/Interwiki.hs,
+                     plugins/Deprofanizer.hs,
+                     plugins/WebArchiver.hs,
+                     plugins/ShowUser.hs,
+                     plugins/Signature.hs,
+                     plugins/Subst.hs,
                      CHANGES, README.markdown, YUI-LICENSE, BLUETRIP-LICENSE, TANGOICONS
 
 Source-repository head
@@ -94,7 +103,7 @@ Flag plugins
   description:       Compile in support for (dynamic) plugins. This will increase the size of
                      the executable and the memory it uses, so those who will not need
                      plugins should disable this flag.
-  default:           False
+  default:           True
 
 Library
   hs-source-dirs:    src
