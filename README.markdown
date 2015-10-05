@@ -1,13 +1,12 @@
 feat/nix-build
 ==============
 
-Rebase from the latest release of `jgm/gitit`.
-
 Build files for the Nix package manager.
+Rebase from the latest [upstream release](https://github.com/jgm/gitit/releases).
+
 Use `nix-build` to build the gitit binaries, or `nix-shell`
 to enter a shell with preinstalled dependencies suitable for hacking.
-Note that the shell doesn't include its own cabal-install,
-but it does have `ghc` and `ghci`.
+Note that the shell doesn't include its own cabal-install.
 To build inside the shell, do:
 
     nix-shell
@@ -15,4 +14,4 @@ To build inside the shell, do:
     cabal configure
     cabal build
 
-Or substitute `cabal repl` for the last one.
+Or you can substitute `cabal repl` at the end.
