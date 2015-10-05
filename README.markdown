@@ -1,8 +1,7 @@
-feat/compiled-plugins
-=====================
+feat/files-plugin
+=================
 
 Rebase from the `feat/compiled-plugins` branch.
 
-Adds a separate list of plugins into the main gitit binary,
-so they can be used without enabling the normal `plugins` flag.
-Not sure whether anyone else will want this or just me.
+Adds a `pageTransformPlugin` called "files" that renders lists of files on the page.
+It borrows code from `Network/Gitit/Handlers.hs`, so that had to be modified.

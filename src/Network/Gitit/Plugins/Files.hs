@@ -1,4 +1,4 @@
-module Files (plugin) where
+module Network.Gitit.Plugins.Files (plugin) where
 
 import Control.Exception (try, SomeException)
 import Data.Either
@@ -40,18 +40,21 @@ plugin = mkPageTransformM transformBlock
 transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
   req <- askRequest
+  cfg <- askConfig
   let reqdir   = reqDir req
       matchdir = fromMaybe reqdir    $ lookup "dir"  as
       sortord  = fromMaybe "forward" $ lookup "sort" as
       prefix   = if null matchdir then "" else matchdir ++ "/"
   files <- listFiles matchdir
-  let html = case conditions (lines txt) of
+  let
+    ext  = defaultExtension cfg
+    html = case conditions (lines txt) of
               Left  s     -> s
               Right conds -> case order sortord of
                             Left  s -> s
                             Right o -> let matches = restrict conds files
                                            sorted  = ordered o matches
-                                       in render prefix sorted
+                                       in render prefix ext sorted
   return $ RawBlock (Format "html") html
 transformBlock x = return x
 
@@ -91,8 +94,8 @@ resPath (FSDirectory d) = d
 reqDir :: Request -> FilePath
 reqDir = intercalate "/" . init . rqPaths
 
-render :: String -> [Resource] -> String
-render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
+render :: String -> String -> [Resource] -> String
+render prefix ext rs = show $ fileListToHtmlNoUplink "" prefix ext rs
 
 
 -----------------------------------
