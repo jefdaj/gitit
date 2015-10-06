@@ -104,7 +104,7 @@ Flag plugins
   description:       Compile in support for plugins.  This will increase the size of
                      the executable and the memory it uses, so those who will not need
                      plugins should disable this flag.
-  default:           True
+  default:           False
 
 Library
   hs-source-dirs:    src
@@ -117,8 +117,8 @@ Library
                      Network.Gitit.Cache, Network.Gitit.State,
                      Paths_gitit, Network.Gitit.Export,
                      Network.Gitit.Handlers,
-                     Network.Gitit.Plugins, Network.Gitit.Plugins.Dot,
-                     Network.Gitit.Plugins.Files, Network.Gitit.Rpxnow,
+                     Network.Gitit.Plugins, Network.Gitit.Plugin.Dot,
+                     Network.Gitit.Plugin.Files, Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
                      Network.Gitit.Compat.Except
   build-depends:     base >= 3 && < 5,
