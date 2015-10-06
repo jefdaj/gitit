@@ -1,4 +1,4 @@
-module Network.Gitit.Plugins.Files (plugin) where
+module Network.Gitit.Plugin.Files (plugin) where
 
 import Control.Exception (try, SomeException)
 import Data.Either

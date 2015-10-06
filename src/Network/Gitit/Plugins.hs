@@ -26,8 +26,8 @@ import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
-import qualified Network.Gitit.Plugins.Dot as Dot
-import qualified Network.Gitit.Plugins.Files as Files
+import qualified Network.Gitit.Plugin.Dot as Dot
+import qualified Network.Gitit.Plugin.Files as Files
 #ifdef _PLUGINS
 import Data.List (isInfixOf, isPrefixOf)
 import GHC
