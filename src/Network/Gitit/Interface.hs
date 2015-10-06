@@ -99,6 +99,15 @@ you can also find them in the directory
 @CABALDIR\/share\/gitit-X.Y.Z\/plugins@, where @CABALDIR@ is the cabal
 install directory and @X.Y.Z@ is the version number of gitit.
 
+TODO add duplicated functions here as utilities:
+  askFile
+  askName
+  link2path
+  listFiles
+  reqDir (that's somewhere already right?)
+  render (but rename it)
+  resPath?
+  uri2path
 -}
 
 module Network.Gitit.Interface ( Plugin(..)
@@ -117,6 +126,7 @@ module Network.Gitit.Interface ( Plugin(..)
                                , askFileStore
                                , askMeta
                                , doNotCache
+                               , fileListToHtmlNoUplink
                                , getContext
                                , modifyContext
                                , inlinesToURL
@@ -125,12 +135,25 @@ module Network.Gitit.Interface ( Plugin(..)
                                , withTempDir
                                , module Text.Pandoc.Definition
                                , module Text.Pandoc.Generic
+
+                               -- TODO clean these up and add Haddock docs
+                               , blocksToString
+                               , setTitle
+                               , askName
+                               , resPath
+                               , isPage
+                               , isThisPage
+                               , reqDir
+                               , listFiles
+                               , render
+                               , renderFiles
                                )
 where
 import Text.Pandoc.Definition
 import Text.Pandoc.Generic
 import Data.Data
 import Network.Gitit.Types
+import Network.Gitit.Handlers (fileListToHtmlNoUplink)
 import Network.Gitit.ContentTransformer
 import Network.Gitit.Util (withTempDir)
 import Network.Gitit.Server (Request(..))
@@ -138,6 +161,11 @@ import Control.Monad.Reader (ask)
 import Control.Monad.Trans (liftIO)
 import Control.Monad (liftM)
 import Data.FileStore (FileStore)
+import Data.Map (insert)
+import System.FilePath (takeBaseName)
+import Data.FileStore (Resource(FSFile, FSDirectory), directory)
+import Data.List (intercalate)
+import Control.Exception (try, SomeException)
 
 -- | Returns the current wiki configuration.
 askConfig :: PluginM Config
@@ -174,3 +202,67 @@ mkPageTransform fn = PageTransform $ return . bottomUp fn
 mkPageTransformM :: Data a => (a -> PluginM a) -> Plugin
 mkPageTransformM =  PageTransform . bottomUpM
 
+blocksToString :: [Block] -> String
+blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
+
+-- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
+setTitle :: Pandoc -> [Inline] -> Pandoc
+setTitle (Pandoc m bs) t = Pandoc m' bs
+  where
+    old = unMeta m
+    new = insert "title" (MetaInlines t) old
+    m'  = Meta {unMeta = new}
+
+-- TODO is this available from the Interface already?
+askName :: PluginM String
+askName = do
+  req <- askRequest
+  let base = takeBaseName $ rqUri req
+  return base
+
+resPath :: Resource -> FilePath
+resPath (FSFile      f) = f
+resPath (FSDirectory d) = d
+
+reqDir :: Request -> FilePath
+reqDir = intercalate "/" . init . rqPaths
+
+askFiles :: PluginM [FilePath]
+askFiles = do
+  fs  <- askFileStore
+  req <- askRequest
+  let dir = reqDir req
+  res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
+  case res of
+    Left  _     -> return []
+    Right files -> return $ map (takeBaseName . resPath) files
+
+isPage :: FilePath -> PluginM Bool
+isPage name = do
+  files <- askFiles
+  return $ name `elem` (map takeBaseName files)
+
+isThisPage :: FilePath -> PluginM Bool
+isThisPage name1 = do
+  name2 <- askName
+  return $ name1 == name2
+
+listFiles :: FilePath -> PluginM [Resource]
+listFiles dir = do
+  fs  <- askFileStore
+  res <- liftIO (try (directory fs dir) :: IO (Either SomeException [Resource]))
+  case res of
+    Left  _     -> return []
+    Right files -> return files
+
+-- TODO if you export this, don't need fileListToHtmlNoUplink?
+render :: String -> [Resource] -> String
+render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
+
+renderFiles :: String -> String -> [String] -> [Block]
+renderFiles _ _ [] = []
+renderFiles t p fs = [header, html]
+  where
+    rs     = map FSFile fs
+    html   = RawBlock (Format "html") (render p rs)
+    header = Para [Str t]

@@ -26,7 +26,11 @@ import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
-import qualified Network.Gitit.Plugins.Dot as Dot
+import qualified Network.Gitit.Plugin.CiteLinks     as CiteLinks
+import qualified Network.Gitit.Plugin.CiteProc      as CiteProc
+import qualified Network.Gitit.Plugin.CiteProcTitle as CiteProcTitle
+import qualified Network.Gitit.Plugin.Dot           as Dot
+import qualified Network.Gitit.Plugin.RelatedFiles  as RelatedFiles
 #ifdef _PLUGINS
 import Data.List (isInfixOf, isPrefixOf)
 import GHC
@@ -86,7 +90,13 @@ loadPlugin pluginName = do
 #endif
 
 compiledPlugins :: [Plugin]
-compiledPlugins = [ Dot.plugin ]
+compiledPlugins =
+  [ CiteLinks.plugin
+  , CiteProc.plugin
+  , CiteProcTitle.plugin
+  , Dot.plugin
+  , RelatedFiles.plugin
+  ]
 
 loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
