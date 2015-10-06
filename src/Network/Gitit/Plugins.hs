@@ -26,6 +26,7 @@ import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
+import qualified Network.Gitit.Plugin.Dot as Dot
 #ifdef _PLUGINS
 import Data.List (isInfixOf, isPrefixOf)
 import GHC
@@ -84,9 +85,11 @@ loadPlugin pluginName = do
 
 #endif
 
+compiledPlugins :: [Plugin]
+compiledPlugins = [ Dot.plugin ]
+
 loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
   plugins' <- mapM loadPlugin pluginNames
   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
-  return plugins'
-
+  return $ compiledPlugins ++ plugins'
