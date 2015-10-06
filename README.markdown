@@ -1,6 +1,5 @@
-feat/files-plugin
-=================
+eat/cite-everything
+====================
 
-Clickable SVG dot diagrams.
-Requires the `dot` binary from `graphviz`, same as regular dot diagrams.
-Rebase from the `feat/cache-dir` branch.
+A collection of plugins that help with academic note-taking.
+Rebase from the `feat/compiled-plugins` branch.
