@@ -38,6 +38,7 @@ isRelatedTo p p2 = (pb `isPrefixOf` p2b) && not (p2 `elem` [pb, pp])
     pp  = addExtension pb ".page"
     p2b = base p2
 
+-- TODO figure out the default extensions thing!
 processDoc :: Pandoc -> PluginM Pandoc
 processDoc (Pandoc m bs) = do
   n <- askName
@@ -45,7 +46,7 @@ processDoc (Pandoc m bs) = do
   let d = reqDir r
   fs <- listFiles d
   let ss = filter (isRelatedTo n) (map resPath fs)
-      rs = renderFiles "Related files:" (d ++ "/") ss
+      rs = renderFiles "Related files:" (d ++ "/") "page" ss
   return $ Pandoc m (rs ++ bs)
 
 plugin :: Plugin
