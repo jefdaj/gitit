@@ -26,6 +26,7 @@ import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
+import qualified Network.Gitit.Plugin.Csv as Csv
 import qualified Network.Gitit.Plugin.Dot as Dot
 import qualified Network.Gitit.Plugin.Files as Files
 #ifdef _PLUGINS
@@ -88,7 +89,8 @@ loadPlugin pluginName = do
 
 compiledPlugins :: [Plugin]
 compiledPlugins =
-  [ Dot.plugin
+  [ Csv.plugin
+  , Dot.plugin
   , Files.plugin
   ]
 

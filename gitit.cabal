@@ -124,6 +124,7 @@ Library
                      Paths_gitit, Network.Gitit.Export,
                      Network.Gitit.Handlers,
                      Network.Gitit.Plugins,
+                     Network.Gitit.Plugin.Csv,
                      Network.Gitit.Plugin.Dot,
                      Network.Gitit.Plugin.Files,
                      Network.Gitit.Rpxnow,
