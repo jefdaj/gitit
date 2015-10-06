@@ -83,7 +83,7 @@ plugin :: Plugin
 plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | elem "csv" cs = do
+    tfm (CodeBlock (_, cs, as) txt) | "csv" `elem` cs && not (null txt) = do
       cap <- return $ caption as
       bod <- body as txt
       return $ table cap bod
