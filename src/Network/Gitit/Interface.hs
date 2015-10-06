@@ -256,13 +256,13 @@ listFiles dir = do
     Right files -> return files
 
 -- TODO if you export this, don't need fileListToHtmlNoUplink?
-render :: String -> [Resource] -> String
-render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
+render :: String -> String -> [Resource] -> String
+render prefix ext rs = show $ fileListToHtmlNoUplink "" prefix ext rs
 
-renderFiles :: String -> String -> [String] -> [Block]
-renderFiles _ _ [] = []
-renderFiles t p fs = [header, html]
+renderFiles :: String -> String -> String -> [String] -> [Block]
+renderFiles _ _ _ [] = []
+renderFiles t p e fs = [header, html]
   where
     rs     = map FSFile fs
-    html   = RawBlock (Format "html") (render p rs)
+    html   = RawBlock (Format "html") (render p e rs)
     header = Para [Str t]
