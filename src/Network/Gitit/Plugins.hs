@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 {- Functions for loading plugins.
 -}
 
-module Network.Gitit.Plugins ( loadPlugin, loadPlugins )
+module Network.Gitit.Plugins ( loadPlugin, loadPlugins, compiledPlugins )
 where
 import Network.Gitit.Types
 import System.FilePath (takeBaseName)
@@ -91,9 +91,9 @@ loadPlugin pluginName = do
 
 compiledPlugins :: [Plugin]
 compiledPlugins =
-  [ CiteLinks.plugin
-  , CiteProc.plugin
-  , CiteProcTitle.plugin
+  [ CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
+  -- , CiteProc.plugin
+  , CiteLinks.plugin -- needs to be applied before (below) CiteProc
   , Dot.plugin
   , RelatedFiles.plugin
   ]
@@ -102,4 +102,4 @@ loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
   plugins' <- mapM loadPlugin pluginNames
   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
-  return $ compiledPlugins ++ plugins'
+  return $ plugins'

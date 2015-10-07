@@ -4,12 +4,12 @@ module Network.Gitit.Plugin.RelatedFiles
 {- This plugin supports keeping notes in the style used by Caleb McDaniel
  - (http://wcm1.web.rice.edu/plain-text-citations.html). That is, you have
  - one wiki page per citable source and it contains a `bib` codeblock with
- - its bibtex entry.
+ - its bibtex entry. Separate bibtex files are also supported.
  -
  - Besides wiki pages, I also keep a few other related files on my wiki:
  - mostly PDFs (sometimes with handwritten notes overlaid), and
  - occasionally other odds and ends like spreadsheets, Word docs, or
- - videos. This plugin inserts a list of any related files at the top of
+ - videos. This plugin inserts a list of related files at the top of
  - a page. It considers any file whose name starts with the name of the
  - current page "related". For example, if you have a wiki page called
  - kerby1972.page it would list kerby1972.pdf, kerby1972_ideas.txt, etc.
@@ -29,7 +29,7 @@ import Data.FileStore  (Resource(FSFile))
 import Data.List       (isPrefixOf)
 import System.FilePath (addExtension, splitExtension)
 
--- TODO don't assume .page?
+-- TODO don't assume .page
 isRelatedTo :: FilePath -> FilePath -> Bool
 isRelatedTo p p2 = (pb `isPrefixOf` p2b) && not (p2 `elem` [pb, pp])
   where
