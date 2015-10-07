@@ -91,6 +91,8 @@ extractConfig cp = do
       cfRepositoryType <- get cp "DEFAULT" "repository-type"
       cfRepositoryPath <- get cp "DEFAULT" "repository-path"
       cfDefaultPageType <- get cp "DEFAULT" "default-page-type"
+      cfCitationStyle <- get cp "DEFAULT" "citation-style"
+      cfDefaultBibliography <- get cp "DEFAULT" "default-bibliography"
       cfDefaultExtension <- get cp "DEFAULT" "default-extension"
       cfMathMethod <- get cp "DEFAULT" "math"
       cfMathjaxScript <- get cp "DEFAULT" "mathjax-script"
@@ -144,6 +146,11 @@ extractConfig cp = do
                             readMarkdown def) $
                             liftIO $ readFileUTF8 markupHelpPath
 
+      defaultStyle  <- liftIO $ getDataFileName $ "data" </> "styles" </> "apa"
+      let style = if null cfPandocUserData || null cfCitationStyle
+                    then defaultStyle
+                    else cfPandocUserData </> "styles" </> cfCitationStyle
+
       mimeMap' <- liftIO $ readMimeTypesFile cfMimeTypesFile
       let authMethod = map toLower cfAuthenticationMethod
       let stripTrailingSlash = reverse . dropWhile (=='/') . reverse
@@ -160,6 +167,12 @@ extractConfig cp = do
           repositoryPath       = cfRepositoryPath
         , repositoryType       = repotype'
         , defaultPageType      = pt
+
+        , citationStyle        = style
+        , defaultBibliography  = if null cfPandocUserData || null cfDefaultBibliography
+                                  then Nothing
+                                  else Just $ cfPandocUserData </> cfDefaultBibliography
+
         , defaultExtension     = cfDefaultExtension
         , mathMethod           = case map toLower cfMathMethod of
                                       "jsmath"   -> JsMathScript

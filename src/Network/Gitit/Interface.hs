@@ -247,6 +247,7 @@ isThisPage name1 = do
   name2 <- askName
   return $ name1 == name2
 
+-- TODO is this the same as askFiles?
 listFiles :: FilePath -> PluginM [Resource]
 listFiles dir = do
   fs  <- askFileStore

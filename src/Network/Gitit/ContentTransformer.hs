@@ -349,8 +349,7 @@ applyWikiTemplate c = do
 -- | Converts Page to Pandoc, applies page transforms, and adds page
 -- title.
 pageToWikiPandoc :: Page -> ContentTransformer Pandoc
-pageToWikiPandoc page' =
-  pageToWikiPandoc' page' >>= addPageTitleToPandoc (pageTitle page')
+pageToWikiPandoc page' = pageToWikiPandoc' page' >>= setTitles page'
 
 pageToWikiPandoc' :: Page -> ContentTransformer Pandoc
 pageToWikiPandoc' = applyPreParseTransforms >=>
@@ -631,6 +630,27 @@ wikiDivify c = do
                           then noHtml
                           else thediv ! [identifier "categoryList"] << ulist << map categoryLink categories
   return $ thediv ! [identifier "wikipage"] << [c, htmlCategories]
+
+{- This picks the best title for the current page. Priorities:
+ -
+ - (1) A title specified in the Pandoc document
+ - (2) A title specified in the page metadata
+ - (3) The path of the page in the repository
+ -
+ - It would probably make more sense to set (1) to match (2) before
+ - applying PageTransforms; I just thought of this way first.
+ -}
+setTitles :: Page -> Pandoc -> ContentTransformer Pandoc
+setTitles page doc@(Pandoc m bs) = do
+  ctx <- get
+  let pTitle = pageTitle page
+      pName  = pgPageName $ ctxLayout ctx
+      pDoc   = Pandoc (B.setMeta "title" (B.str pTitle) m) bs
+      dTitle = inlinesToString $ docTitle m
+      dBest  = (null pTitle || pTitle == pName) && (not $ null dTitle)
+      (title', doc') = if dBest then (dTitle, doc) else (pTitle, pDoc)
+  updateLayout $ \layout -> layout { pgTitle = title' }
+  return doc'
 
 -- | Adds page title to a Pandoc document.
 addPageTitleToPandoc :: String -> Pandoc -> ContentTransformer Pandoc
