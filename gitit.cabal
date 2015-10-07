@@ -89,6 +89,7 @@ data-files:          data/static/css/screen.css, data/static/css/print.css,
                      data/markupHelp/HTML, data/markupHelp/Org,
                      plugins/CapitalizeEmphasis.hs,
                      plugins/PigLatin.hs,
+                     plugins/FancyBib.hs,
                      plugins/Dot.hs,
                      plugins/ImgTex.hs,
                      plugins/Interwiki.hs,
@@ -180,7 +181,7 @@ Library
     build-depends:   network >= 2 && < 2.6
   if flag(plugins)
     exposed-modules: Network.Gitit.Interface
-    build-depends:   ghc, ghc-paths
+    build-depends:   ghc, ghc-paths, pandoc-citeproc
     cpp-options:     -D_PLUGINS
   extensions:        CPP
   if impl(ghc >= 6.12)
