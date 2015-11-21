@@ -91,11 +91,11 @@ loadPlugin pluginName = do
 
 compiledPlugins :: [Plugin]
 compiledPlugins =
-  [ CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
-  -- , CiteProc.plugin
-  , CiteLinks.plugin -- needs to be applied before (below) CiteProc
+  [ CiteLinks.plugin -- needs to be applied before (below) CiteProc
+  , CiteProcTitle.plugin -- needs to be applied after (above) CiteProc
   , Dot.plugin
   , RelatedFiles.plugin
+  , CiteProc.plugin
   ]
 
 loadPlugins :: [FilePath] -> IO [Plugin]

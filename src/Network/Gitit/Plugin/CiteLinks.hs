@@ -27,6 +27,8 @@ import Network.Gitit.Interface
 plugin :: Plugin
 plugin = mkPageTransformM citeLinks
 
+-- TODO hmm what if it's just not counting the right things as pages,
+--      like because of the new default extension argument?
 citeLinks :: Inline -> PluginM Inline
 citeLinks s@(Str ('@':name)) = do
   page <- isPage     name
