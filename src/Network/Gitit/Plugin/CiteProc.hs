@@ -49,8 +49,8 @@ import Text.CSL.Style        (Style)
 defaultBibliography :: FilePath
 defaultBibliography = "/home/jefdaj/code/nixcfg/mypkgs/gitit/default.bib"
 
-defaultStyle :: FilePath
-defaultStyle = "/home/jefdaj/code/nixcfg/mypkgs/gitit/apa"
+defaultStyleFile :: FilePath
+defaultStyleFile = "/home/jefdaj/code/nixcfg/mypkgs/gitit/apa"
 
 blocksToString :: [Block] -> String
 blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
@@ -77,7 +77,6 @@ parseRefs blks = do
     [ fmap return   $ blks
     , fmap readFile $ lookup "bibliography" meta
     , fmap readFile $ Just defaultBibliography
-    , fmap return   $ Just ""
     ]
   bib <- liftIO $ readBibtexInputString True txt
   return bib
@@ -91,7 +90,7 @@ getRefs doc = do
 parseStyle :: PluginM Style
 parseStyle = do
   cfg <- askConfig
-  sty <- liftIO $ readCSLFile Nothing $ defaultStyle
+  sty <- liftIO $ readCSLFile Nothing $ defaultStyleFile
   return sty
 
 processDoc :: Pandoc -> PluginM Pandoc
