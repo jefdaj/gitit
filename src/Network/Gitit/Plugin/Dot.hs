@@ -1,5 +1,7 @@
 module Network.Gitit.Plugin.Dot (plugin) where
 
+-- TODO: insert dot error messages rather than crashing!
+
 -- This plugin allows you to include a graphviz dot diagram
 -- in a page like this:
 --
