@@ -46,15 +46,14 @@ import Text.CSL.Parser       (readCSLFile)
 import Text.CSL.Reference    (Reference)
 import Text.CSL.Style        (Style)
 
-
--- temporary hardcoded preferences --
-
 defaultBibliography :: FilePath
 defaultBibliography = "/home/jefdaj/code/nixcfg/mypkgs/gitit/default.bib"
 
 defaultStyle :: FilePath
 defaultStyle = "/home/jefdaj/code/nixcfg/mypkgs/gitit/apa"
 
+blocksToString :: [Block] -> String
+blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
 
 isBibBlock :: Block -> Bool
 isBibBlock (CodeBlock (_,cs,_) _) = "bib" `elem` cs
@@ -77,7 +76,7 @@ parseRefs blks = do
   txt <- liftIO $ head $ mapMaybe id
     [ fmap return   $ blks
     , fmap readFile $ lookup "bibliography" meta
-    , fmap readFile $ defaultBibliography
+    , fmap readFile $ Just defaultBibliography
     , fmap return   $ Just ""
     ]
   bib <- liftIO $ readBibtexInputString True txt
