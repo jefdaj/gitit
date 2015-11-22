@@ -24,8 +24,8 @@ module Network.Gitit.Plugin.RelatedFiles
  -}
 
 import Network.Gitit.Interface
+import Network.Gitit.Plugin.CiteUtils
 
-import Data.FileStore  (Resource(FSFile))
 import Data.List       (isPrefixOf)
 import System.FilePath (addExtension, splitExtension)
 
@@ -38,7 +38,8 @@ isRelatedTo p p2 = (pb `isPrefixOf` p2b) && not (p2 `elem` [pb, pp])
     pp  = addExtension pb ".page"
     p2b = base p2
 
--- TODO figure out the default extensions thing!
+-- TODO figure out the default extensions thing
+-- TODO make sure it incorporates the wiki domain name (or links break)
 processDoc :: Pandoc -> PluginM Pandoc
 processDoc (Pandoc m bs) = do
   n <- askName

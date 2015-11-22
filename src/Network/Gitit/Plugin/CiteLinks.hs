@@ -23,6 +23,7 @@ module Network.Gitit.Plugin.CiteLinks
  -}
 
 import Network.Gitit.Interface
+import Network.Gitit.Plugin.CiteUtils
 
 plugin :: Plugin
 plugin = mkPageTransformM citeLinks
@@ -33,6 +34,8 @@ citeLinks :: Inline -> PluginM Inline
 citeLinks s@(Str ('@':name)) = do
   page <- isPage     name
   this <- isThisPage name
+  liftIO $ putStrLn $ "page: " ++ show page
+  liftIO $ putStrLn $ "this: " ++ show this
   if page && (not this)
     then return $ Link [Str name] (name, name)
     else return s
