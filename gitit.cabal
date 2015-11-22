@@ -129,6 +129,7 @@ Library
                      Network.Gitit.Plugin.CiteProcTitle,
                      Network.Gitit.Plugin.Dot,
                      Network.Gitit.Plugin.RelatedFiles,
+                     Network.Gitit.Plugin.CiteUtils,
                      Network.Gitit.Plugins,
                      Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,

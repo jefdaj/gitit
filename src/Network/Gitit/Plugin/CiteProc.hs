@@ -38,6 +38,7 @@ module Network.Gitit.Plugin.CiteProc
 --      then use it for the citeproc stuff to start out
 
 import Network.Gitit.Interface
+import Network.Gitit.Plugin.CiteUtils
 
 import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)

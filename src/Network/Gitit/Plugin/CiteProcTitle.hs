@@ -17,7 +17,8 @@ module Network.Gitit.Plugin.CiteProcTitle
  -}
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteProc (getRefs)
+import Network.Gitit.Plugin.CiteProc (getRefs) -- TODO move to CiteUtils
+import Network.Gitit.Plugin.CiteUtils
 
 import Text.CSL.Reference (Reference, refId, title, unLiteral)
 import Text.CSL.Style     (unFormatted)
