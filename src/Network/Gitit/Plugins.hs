@@ -29,6 +29,7 @@ import System.Log.Logger (logM, Priority(..))
 import qualified Network.Gitit.Plugin.Csv as Csv
 import qualified Network.Gitit.Plugin.Dot as Dot
 import qualified Network.Gitit.Plugin.Files as Files
+import qualified Network.Gitit.Plugin.CiteProc as CiteProc
 #ifdef _PLUGINS
 import Data.List (isInfixOf, isPrefixOf)
 import GHC
@@ -92,6 +93,7 @@ compiledPlugins =
   [ Csv.plugin
   , Dot.plugin
   , Files.plugin
+  , CiteProc.plugin
   ]
 
 loadPlugins :: [FilePath] -> IO [Plugin]

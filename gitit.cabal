@@ -127,6 +127,7 @@ Library
                      Network.Gitit.Plugin.Csv,
                      Network.Gitit.Plugin.Dot,
                      Network.Gitit.Plugin.Files,
+                     Network.Gitit.Plugin.CiteProc,
                      Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
                      Network.Gitit.Compat.Except
@@ -143,6 +144,7 @@ Library
                      mtl,
                      old-time,
                      pandoc >= 1.12.4 && < 1.16,
+                     pandoc-citeproc,
                      pandoc-types >= 1.12.3 && < 1.13,
                      highlighting-kate >= 0.5.0.1 && < 0.7,
                      bytestring,
