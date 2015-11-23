@@ -1,8 +1,5 @@
 module Network.Gitit.Plugin.CiteUtils
-  ( blocksToString
-  , setTitle
-  , askName
-  , resPath
+  ( resPath
   , isPage
   , isThisPage
   , reqDir
@@ -11,6 +8,9 @@ module Network.Gitit.Plugin.CiteUtils
   , renderFiles
   )
   where
+  -- ( blocksToString
+  -- , setTitle
+  -- , askName
 
 import Network.Gitit.Interface
 import Text.Pandoc.Definition
@@ -35,23 +35,23 @@ import Data.FileStore  (Resource(FSFile))
 import Data.List       (isPrefixOf)
 import System.FilePath (addExtension, splitExtension)
 
-blocksToString :: [Block] -> String
-blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
-
--- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
-setTitle :: Pandoc -> [Inline] -> Pandoc
-setTitle (Pandoc m bs) t = Pandoc m' bs
-  where
-    old = unMeta m
-    new = insert "title" (MetaInlines t) old
-    m'  = Meta {unMeta = new}
-
--- TODO is this available from the Interface already?
-askName :: PluginM String
-askName = do
-  req <- askRequest
-  let base = takeBaseName $ rqUri req
-  return base
+-- blocksToString :: [Block] -> String
+-- blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
+-- 
+-- -- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
+-- setTitle :: Pandoc -> [Inline] -> Pandoc
+-- setTitle (Pandoc m bs) t = Pandoc m' bs
+--   where
+--     old = unMeta m
+--     new = insert "title" (MetaInlines t) old
+--     m'  = Meta {unMeta = new}
+-- 
+-- -- TODO is this available from the Interface already?
+-- askName :: PluginM String
+-- askName = do
+--   req <- askRequest
+--   let base = takeBaseName $ rqUri req
+--   return base
 
 resPath :: Resource -> FilePath
 resPath (FSFile      f) = f

@@ -41,14 +41,34 @@ module Network.Gitit.Plugin.CiteProc
 -- TODO can docTitle from Pandoc used to get the title?
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteUtils
+-- import Network.Gitit.Plugin.CiteUtils (blocksToString, setTitle, askName)
 
+import System.FilePath (takeBaseName)
+import Data.Map (insert)
 import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)
 import Text.CSL.Pandoc       (processCites)
 import Text.CSL.Parser       (readCSLFile)
 import Text.CSL.Reference    (Reference, refId, title, unLiteral)
 import Text.CSL.Style        (Style, unFormatted)
+
+blocksToString :: [Block] -> String
+blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
+
+-- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
+setTitle :: Pandoc -> [Inline] -> Pandoc
+setTitle (Pandoc m bs) t = Pandoc m' bs
+  where
+    old = unMeta m
+    new = insert "title" (MetaInlines t) old
+    m'  = Meta {unMeta = new}
+
+-- TODO is this available from the Interface already?
+askName :: PluginM String
+askName = do
+  req <- askRequest
+  let base = takeBaseName $ rqUri req
+  return base
 
 isBibBlock :: Block -> Bool
 isBibBlock (CodeBlock (_,cs,_) _) = "bib" `elem` cs
