@@ -120,7 +120,6 @@ Library
                      Network.Gitit.Handlers,
                      Network.Gitit.Plugin.CiteLinks,
                      Network.Gitit.Plugin.CiteProc,
-                     Network.Gitit.Plugin.CiteProcTitle,
                      Network.Gitit.Plugin.Dot,
                      Network.Gitit.Plugin.RelatedFiles,
                      Network.Gitit.Plugin.CiteUtils,
