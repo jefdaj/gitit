@@ -1,6 +1,8 @@
 module Network.Gitit.Plugin.CiteProc
   where
 
+-- TODO: move stuff back in here from CiteUtils unless it's really common
+
 {- This plugin processes bibtex citations using pandoc-citeproc.
  - It will pick them up from one or more `bib` blocks in the page itself,
  - like so:
@@ -36,6 +38,7 @@ module Network.Gitit.Plugin.CiteProc
 -- TODO add custom PDF links from the bibtex branch
 -- TODO add a section for plugins to the config file,
 --      then use it for the citeproc stuff to start out
+-- TODO can docTitle from Pandoc used to get the title?
 
 import Network.Gitit.Interface
 import Network.Gitit.Plugin.CiteUtils
@@ -44,8 +47,8 @@ import Data.Maybe            (mapMaybe)
 import Text.CSL.Input.Bibtex (readBibtexInputString)
 import Text.CSL.Pandoc       (processCites)
 import Text.CSL.Parser       (readCSLFile)
-import Text.CSL.Reference    (Reference)
-import Text.CSL.Style        (Style)
+import Text.CSL.Reference    (Reference, refId, title, unLiteral)
+import Text.CSL.Style        (Style, unFormatted)
 
 isBibBlock :: Block -> Bool
 isBibBlock (CodeBlock (_,cs,_) _) = "bib" `elem` cs
@@ -86,13 +89,42 @@ parseStyle = do
   sty <- liftIO $ readCSLFile Nothing $ citationStyle cfg
   return sty
 
+-- I couldn't figure out getReference Locators, so I worked around them
+keyAndTitle :: Reference -> (String, [Inline])
+keyAndTitle r = (unId r, unTitle r)
+  where
+    unId    = unLiteral   . refId
+    unTitle = unFormatted . title
+
+-- TODO have just getThisRef, and exract the title afterward?
+--      (so you can get the other stuff too maybe)
+getThisTitle :: Pandoc -> PluginM (Maybe [Inline])
+getThisTitle doc = do
+  name <- askName
+  refs <- getRefs doc
+  let rmap = map keyAndTitle refs
+  return $ lookup name rmap
+
+setTitleIfNeeded :: Pandoc -> PluginM Pandoc
+setTitleIfNeeded doc = do
+  ref <- getThisTitle doc
+  case ref of
+    Nothing -> return doc
+    Just r  -> return $ setTitle doc r
+
+-- TODO is it even using the CSL file, or does that require processCites'?
+--      also, does processCites' take care of loading the bibliography?
+-- TODO make sure not to set title if there is one in the metadata already
 processDoc :: Pandoc -> PluginM Pandoc
 processDoc doc = do
+  ttl <- getThisTitle doc
   let (doc', bib) = extractRefs doc
   bib' <- parseRefs bib
   sty  <- parseStyle
   let doc'' = processCites sty bib' doc'
-  return doc''
+  case ttl of
+    Nothing -> return doc''
+    Just t  -> return $ setTitle doc'' t
 
 plugin :: Plugin
 plugin = PageTransform processDoc

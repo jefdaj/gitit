@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 {- Functions for loading plugins.
 -}
 
+-- TODO: epic idea: *all* citations become links if there are pages
+
 module Network.Gitit.Plugins ( loadPlugin, loadPlugins, compiledPlugins )
 where
 import Network.Gitit.Types
@@ -28,7 +30,6 @@ import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
 import qualified Network.Gitit.Plugin.CiteLinks     as CiteLinks
 import qualified Network.Gitit.Plugin.CiteProc      as CiteProc
-import qualified Network.Gitit.Plugin.CiteProcTitle as CiteProcTitle
 import qualified Network.Gitit.Plugin.Dot           as Dot
 import qualified Network.Gitit.Plugin.RelatedFiles  as RelatedFiles
 #ifdef _PLUGINS
@@ -89,12 +90,11 @@ loadPlugin pluginName = do
 
 #endif
 
+-- TODO: get RelatedFiles working 
+-- TODO: get CiteLinks working (and absorb into CiteProc?)
 compiledPlugins :: [Plugin]
 compiledPlugins =
-  [ RelatedFiles.plugin
-  -- , CiteProc.plugin
-  , CiteLinks.plugin     -- needs to be applied before (below) CiteProc
-  , CiteProcTitle.plugin -- needs to be applied after  (above) CiteProc
+  [ CiteProc.plugin
   , Dot.plugin
   ]
 
