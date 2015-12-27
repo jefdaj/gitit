@@ -79,7 +79,7 @@ getGithubUser ghConfig githubCallbackPars githubState = liftIO $
                                              Nothing -> return $ Right user
                                              Just githuborg -> ifSuccess
                                                       ("Membership check failed: the user " ++ unpack gitLogin ++  " is required to be a member of the organization "  ++ unpack githuborg ++ ".")
-                                                      (orgInfo gitLogin githuborg mgr (accessToken at))
+                                                      (orgInfo gitLogin githuborg mgr at)
                                                       (\_ -> return $ Right user))))
               else
                 return $ Left $
