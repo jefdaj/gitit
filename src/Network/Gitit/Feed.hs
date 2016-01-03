@@ -191,15 +191,6 @@ enTag :: String -> [Content] -> Content
 enTag tag content = Elem blank_element{ elName=blank_name{qName=tag}
                                       , elContent=content
                                       }
-#else
-enTag :: T.Text -> [XMLTypes.Node] -> XMLTypes.Node
-enTag tag content = XMLTypes.NodeElement $
-  XMLTypes.Element
-  (XMLTypes.Name tag Nothing Nothing)
-  [] content
-#endif
-
-#if MIN_VERSION_feed(1, 3, 0) || (! MIN_VERSION_feed(1, 2, 0))
 enTag1 :: String -> Content -> Content
 #else
 enTag1 :: T.Text -> XMLTypes.Node -> XMLTypes.Node

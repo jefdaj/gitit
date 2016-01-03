@@ -741,11 +741,17 @@ wikiLinksTransform pandoc
 
 -- | Convert links with no URL to wikilinks.
 convertWikiLinks :: Config -> Inline -> Inline
+#if MIN_VERSION_pandoc(1,16,0)
 convertWikiLinks cfg (Link attr ref ("", "")) | useAbsoluteUrls cfg =
-  Link attr ref (T.pack ("/" </> baseUrl cfg </> inlinesToURL ref),
-                 "Go to wiki page")
+  Link attr ref ("/" </> baseUrl cfg </> inlinesToURL ref, "Go to wiki page")
 convertWikiLinks _cfg (Link attr ref ("", "")) =
-  Link attr ref (T.pack (inlinesToURL ref), "Go to wiki page")
+  Link attr ref (inlinesToURL ref, "Go to wiki page")
+#else
+convertWikiLinks cfg (Link ref ("", "")) | useAbsoluteUrls cfg =
+  Link ref ("/" </> baseUrl cfg </> inlinesToURL ref, "Go to wiki page")
+convertWikiLinks _cfg (Link ref ("", "")) =
+  Link ref (inlinesToURL ref, "Go to wiki page")
+#endif
 convertWikiLinks _cfg x = x
 
 -- | Derives a URL from a list of Pandoc Inline elements.
@@ -769,14 +775,21 @@ inlinesToString = T.unpack . mconcat . map go
                Cite _ xs               -> mconcat $ map go xs
                Code _ s                -> s
                Space                   -> " "
+#if MIN_VERSION_pandoc(1,16,0)
                SoftBreak               -> " "
+#endif
                LineBreak               -> " "
                Math DisplayMath s      -> "$$" <> s <> "$$"
                Math InlineMath s       -> "$" <> s <> "$"
                RawInline (Format "tex") s -> s
                RawInline _ _           -> ""
-               Link _ xs _             -> mconcat $ map go xs
-               Image _ xs _            -> mconcat $ map go xs
+#if MIN_VERSION_pandoc(1,16,0)
+               Link _ xs _             -> concatMap go xs
+               Image _ xs _            -> concatMap go xs
+#else
+               Link xs _               -> concatMap go xs
+               Image xs _              -> concatMap go xs
+#endif
                Note _                  -> ""
                Span _ xs               -> mconcat $ map go xs
 

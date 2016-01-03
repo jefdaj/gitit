@@ -27,8 +27,8 @@ import Text.Pandoc hiding (HTMLMathMethod(..), getDataFileName)
 import qualified Text.Pandoc as Pandoc
 import Text.Pandoc.PDF (makePDF)
 import Text.Pandoc.SelfContained as SelfContained
+import Text.Pandoc.Shared (readDataFileUTF8)
 import qualified Text.Pandoc.UTF8 as UTF8
-import qualified Data.Map as M
 import Network.Gitit.Server
 import Network.Gitit.Framework (pathForPage)
 import Network.Gitit.State (getConfig)
@@ -75,7 +75,7 @@ respondX templ mimetype ext fn opts page doc = do
 respondS :: String -> String -> String -> (WriterOptions -> Pandoc -> PandocIO Text)
           -> WriterOptions -> String -> Pandoc -> Handler
 respondS templ mimetype ext fn =
-  respondX templ mimetype ext (\o d -> fromStrict . encodeUtf8 <$> fn o d)
+  respondX templ mimetype ext (\o d -> return $ UTF8.fromStringLazy $ fn o d)
 
 respondSlides :: String -> (WriterOptions -> Pandoc -> PandocIO Text) -> String -> Pandoc -> Handler
 respondSlides templ fn page doc = do
@@ -91,42 +91,44 @@ respondSlides templ fn page doc = do
     -- needed for the slides.)  We then pass the body into the
     -- slide template using the 'body' variable.
     Pandoc meta blocks <- fixURLs page doc
-    docOrError <- liftIO $ runIO $ do
-          setUserDataDir $ pandocUserData cfg
-          body' <- writeHtml5String opts' (Pandoc meta blocks) -- just body
-          let body'' = T.unpack
-                       $ (if xssSanitize cfg then sanitizeBalance else id)
-                       $ body'
-          let setVariable key val (DT.Context ctx) =
-                DT.Context $ M.insert (T.pack key) (toVal (T.pack val)) ctx
-          variables' <- if mathMethod cfg == MathML
-                          then do
-                              s <- readDataFile "MathMLinHTML.js"
-                              return $ setVariable "mathml-script"
-                                         (UTF8.toString s) mempty
-                          else return mempty
-          compiledTemplate <- compileDefaultTemplate (T.pack templ)
-          dzcore <- if templ == "dzslides"
-                      then do
-                        dztempl <- readDataFile $ "dzslides" </> "template.html"
-                        return $ unlines
-                            $ dropWhile (not . isPrefixOf "<!-- {{{{ dzslides core")
-                            $ lines $ UTF8.toString dztempl
-                      else return ""
-          let opts'' = opts'{
-                             writerVariables =
-                               setVariable "body" body'' $
-                               setVariable "dzslides-core" dzcore $
-                               setVariable "highlighting-css" pygmentsCss
-                               $ variables'
-                            ,writerTemplate = Just compiledTemplate }
-          h <- fn opts'' (Pandoc meta [])
-          makeSelfContained h
-    either (liftIO . throwIO)
-           (ok . setContentType "text/html;charset=UTF-8" .
-             (setFilename (page ++ ".html")) .
-             toResponseBS B.empty . L.fromStrict . UTF8.fromText)
-           docOrError
+    let body' = writeHtmlString opts'{writerStandalone = False}
+                   (Pandoc meta blocks) -- just body
+    let body'' = T.unpack
+               $ (if xssSanitize cfg then sanitizeBalance else id)
+               $ T.pack body'
+    variables' <- if mathMethod cfg == MathML
+                     then do
+                        s <- liftIO $ readDataFileUTF8 (pandocUserData cfg)
+                                  "MathMLinHTML.js"
+                        return [("mathml-script", s)]
+                     else return []
+    template' <- liftIO $ getDefaultTemplate (pandocUserData cfg) templ
+    template <- case template' of
+                     Right t  -> return t
+                     Left e   -> liftIO $ throwIO e
+    dzcore <- if templ == "dzslides"
+                  then do
+                    dztempl <- liftIO $ readDataFileUTF8 (pandocUserData cfg)
+                           $ "dzslides" </> "template.html"
+                    return $ unlines
+                        $ dropWhile (not . isPrefixOf "<!-- {{{{ dzslides core")
+                        $ lines dztempl
+                  else return ""
+    let opts'' = opts'{
+                writerVariables =
+                  ("body",body''):("dzslides-core",dzcore):("highlighting-css",pygmentsCss):variables'
+               ,writerTemplate = template
+               ,writerUserDataDir = pandocUserData cfg
+               }
+    let h = writeHtmlString opts'' (Pandoc meta [])
+#if MIN_VERSION_pandoc(1,13,0)
+    h' <- liftIO $ makeSelfContained opts'' h
+#else
+    h' <- liftIO $ makeSelfContained (pandocUserData cfg) h
+#endif
+    ok . setContentType "text/html;charset=UTF-8" .
+      -- (setFilename (page ++ ".html")) .
+      toResponseBS B.empty $ UTF8.fromStringLazy h'
 
 respondLaTeX :: String -> Pandoc -> Handler
 respondLaTeX = respondS "latex" "application/x-latex" "tex"
@@ -139,7 +141,7 @@ respondConTeXt = respondS "context" "application/x-context" "tex"
 
 respondRTF :: String -> Pandoc -> Handler
 respondRTF = respondX "rtf" "application/rtf" "rtf"
-  (\o d -> L.fromStrict . UTF8.fromText <$> writeRTF o d) defaultRespOptions
+  (\o d -> UTF8.fromStringLazy `fmap` writeRTFWithEmbeddedImages o d) defaultRespOptions
 
 respondRST :: String -> Pandoc -> Handler
 respondRST = respondS "rst" "text/plain; charset=utf-8" ""
@@ -173,10 +175,14 @@ respondOrg :: String -> Pandoc -> Handler
 respondOrg = respondS "org" "text/plain; charset=utf-8" ""
   writeOrg defaultRespOptions
 
+#if MIN_VERSION_pandoc(1,16,0)
 respondICML :: String -> Pandoc -> Handler
 respondICML = respondX "icml" "application/xml; charset=utf-8" ""
-              (\o d -> L.fromStrict . UTF8.fromText <$> writeICML o d)
-                         defaultRespOptions
+              (\o d -> UTF8.fromStringLazy <$> writeICML o d) defaultRespOptions
+#else
+respondICML = respondS "icml" "application/xml; charset=utf-8" ""
+              writeICML defaultRespOptions
+#endif
 
 respondTextile :: String -> Pandoc -> Handler
 respondTextile = respondS "textile" "text/plain; charset=utf-8" ""
@@ -226,8 +232,8 @@ respondPDF useBeamer page old_pndc = fixURLs page old_pndc >>= \pndc -> do
               either (liftIO . throwIO) return res
 
   case pdf' of
-       Left logOutput' -> simpleErrorHandler ("PDF creation failed:\n"
-                           ++ UTF8.toStringLazy logOutput')
+       Left logOutput -> simpleErrorHandler ("PDF creation failed:\n"
+                           ++ UTF8.toStringLazy logOutput)
        Right pdfBS -> do
               case cached of
                 Nothing ->
@@ -252,9 +258,15 @@ fixURLs page pndc = do
         cache  = cacheDir  cfg
     let repoPath = repositoryPath cfg
 
+#if MIN_VERSION_pandoc(1,16,0)
     let go (Image attr ils (url, title)) = do
-           fixedURL <- fixURL $ T.unpack url
-           return $ Image attr ils (T.pack fixedURL, title)
+           fixedURL <- fixURL url
+           return $ Image attr ils (fixedURL, title)
+#else
+    let go (Image ils (url, title)) = do
+           fixedURL <- fixURL url
+           return $ Image ils (fixedURL, title)
+#endif
         go x                        = return x
 
         fixURL ('/':url) = resolve url
