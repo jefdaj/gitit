@@ -317,7 +317,7 @@ sharedValidation validationType params = do
   let errors = validate $ optionalTests validationType ++
         [ (not isValidAccessCode, "Incorrect response to access prompt.")
         , (not (isValidUsername uname),
-         "Username must be at least 3 charcaters, all letters or digits.")
+         "Username must be at least 3 characters, all letters or digits.")
         , (not (isValidPassword pword),
          "Password must be at least 6 characters, " ++
          "and must contain at least one non-letter.")
@@ -464,7 +464,11 @@ oauthGithubCallback ghConfig githubCallbackPars =
                      seeOther (encUrl destination) $ toResponse ()
           Left err -> do
               liftIO $ logM "gitit" WARNING $ "Login Failed: " ++ ghUserMessage err ++ maybe "" (". Github response" ++) (ghDetails err)
-              let url = destination ++ "?message=" ++ ghUserMessage err
+              cfg <- getConfig
+              let destination'
+                    | requireAuthentication cfg >= ForRead = base' ++ "/_loginFailure"
+                    | otherwise                            = destination
+              let url = destination' ++ "?message=" ++ ghUserMessage err
               seeOther (encUrl url) $ toResponse ()
 
 githubAuthHandlers :: GithubConfig
@@ -472,8 +476,20 @@ githubAuthHandlers :: GithubConfig
 githubAuthHandlers ghConfig =
   [ dir "_logout" $ withData logoutUser
   , dir "_login" $ loginGithubUser $ oAuth2 ghConfig
+  , dir "_loginFailure" $ githubLoginFailure
   , dir "_githubCallback" $ withData $ oauthGithubCallback ghConfig
   , dir "_user" currentUser ]
+
+githubLoginFailure :: Handler
+githubLoginFailure = withData $ \params ->
+  formattedPage (pageLayout (pMessages params)) noHtml >>= forbidden
+  where
+    pageLayout msgs =
+      defaultPageLayout{ pgShowPageTools = False,
+                         pgTabs = [],
+                         pgTitle = "Login failure",
+                         pgMessages = msgs
+                       }
 
 -- Login using RPX (see RPX development docs at https://rpxnow.com/docs)
 loginRPXUser :: RPars  -- ^ The parameters passed by the RPX callback call (after authentication has taken place

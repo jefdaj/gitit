@@ -116,6 +116,7 @@ extractConfig cp = do
       cfNoEdit <- get cp "DEFAULT" "no-edit"
       cfNoDelete <- get cp "DEFAULT" "no-delete"
       cfDefaultSummary <- get cp "DEFAULT" "default-summary"
+      cfDeleteSummary <- get cp "DEFAULT" "delete-summary"
       cfAccessQuestion <- get cp "DEFAULT" "access-question"
       cfAccessQuestionAnswers <- get cp "DEFAULT" "access-question-answers"
       cfUseRecaptcha <- get cp "DEFAULT" "use-recaptcha"
@@ -222,6 +223,7 @@ extractConfig cp = do
         , noEdit               = splitCommaList cfNoEdit
         , noDelete             = splitCommaList cfNoDelete
         , defaultSummary       = cfDefaultSummary
+        , deleteSummary        = cfDeleteSummary
         , accessQuestion       = if null cfAccessQuestion
                                     then Nothing
                                     else Just (cfAccessQuestion, splitCommaList cfAccessQuestionAnswers)

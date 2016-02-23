@@ -67,13 +67,13 @@ getGithubUser ghConfig githubCallbackPars githubState =
                             (\githubUserMail -> do
                                        let gitLogin = gLogin githubUser
                                        user <- mkUser (unpack gitLogin)
-                                                   (unpack $ email $ head githubUserMail)
+                                                   (unpack $ email $ head (filter primary githubUserMail))
                                                    "none"
                                        let mbOrg = org ghConfig
                                        case mbOrg of
                                              Nothing -> return $ Right user
                                              Just githuborg -> ifSuccess
-                                                      ("Membership check of user " ++ unpack gitLogin ++  " to "  ++ unpack githuborg ++ " failed")
+                                                      ("Membership check failed: the user " ++ unpack gitLogin ++  " is required to be a member of the organization "  ++ unpack githuborg ++ ".")
                                                       (orgInfo gitLogin githuborg mgr at)
                                                       (\_ -> return $ Right user))))
               else
@@ -117,11 +117,13 @@ instance FromJSON GithubUser where
     parseJSON _ = mzero
 
 data GithubUserMail = GithubUserMail { email :: Text
+                                     , primary :: Bool
                              } deriving (Show, Eq)
 
 instance FromJSON GithubUserMail where
     parseJSON (Object o) = GithubUserMail
                            <$> o .: "email"
+                           <*> o .: "primary"
     parseJSON _ = mzero
 
 sToBS :: String -> BS.ByteString
