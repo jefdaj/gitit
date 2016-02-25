@@ -14,6 +14,7 @@ mkDerivation {
   sha256 = "0wvxynb0bkbbnn9m2m2ivlqjzr2gj9ylp6z5xxpavqakfm70kky2";
   isLibrary = true;
   isExecutable = true;
+  jailbreak = true;
   libraryHaskellDepends = [
     aeson base base64-bytestring blaze-html bytestring ConfigFile
     containers directory feed filepath filestore ghc ghc-paths
