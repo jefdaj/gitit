@@ -35,7 +35,9 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
       dotargs = ["-Tsvg", "-o", outfile]
   cached <- liftIO $ doesFileExist outfile
   unless cached $ do
-    (ec, _out, err) <- liftIO $ readProcessWithExitCode "dot" dotargs contents
+    -- TODO damn, this is what it took! replace directly in here using Nix then?
+    --      or is there a less hard-coded way?
+    (ec, _out, err) <- liftIO $ readProcessWithExitCode "/nix/store/1sw37vlrd000gn289bkhpw5yyvj00xkg-graphviz-2.38.0/bin/dot" dotargs contents
     -- TODO fix so it doesn't crash the wiki with an error!
     unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
   svg <- liftIO $ readFile outfile
