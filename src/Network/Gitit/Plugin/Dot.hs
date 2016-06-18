@@ -35,7 +35,7 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
       dotargs = ["-Tsvg", "-o", outfile]
   cached <- liftIO $ doesFileExist outfile
   unless cached $ do
-    (ec, _out, err) <- liftIO $ readProcessWithExitCode "dot" dotargs contents
+    (ec, _out, err) <- liftIO $ readProcessWithExitCode "/nix/store/1sw37vlrd000gn289bkhpw5yyvj00xkg-graphviz-2.38.0/bin/dot" dotargs contents
     unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
   svg <- liftIO $ readFile outfile
   return $ RawBlock (Format "html") svg
