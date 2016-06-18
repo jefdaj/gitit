@@ -14,7 +14,7 @@
 
 let
   myTexLive = texlive.combine {
-    inherit (texlive) scheme-small;
+    inherit (texlive) scheme-small collection-xetex;
   };
 
 in mkDerivation {
@@ -41,7 +41,7 @@ in mkDerivation {
   license = "GPL";
 
   # extra depdendencies for plugins
-  buildDepends = [ makeWrapper ];
+  buildDepends = [ graphviz myTexLive makeWrapper ];
   postInstall = ''
     wrapProgram $out/bin/gitit \
       --prefix PATH : "${graphviz}/bin:${myTexLive}/bin"
