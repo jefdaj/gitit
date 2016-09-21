@@ -46,7 +46,7 @@ import Network.Gitit.Interface
 import System.FilePath (takeBaseName)
 import Data.Map (insert)
 import Data.Maybe            (mapMaybe)
-import Text.CSL.Input.Bibtex (readBibtexInputString)
+import Text.CSL.Input.Bibtex (readBibtexString)
 import Text.CSL.Pandoc       (processCites)
 import Text.CSL.Parser       (readCSLFile)
 import Text.CSL.Reference    (Reference, refId, title, unLiteral)
@@ -94,7 +94,7 @@ parseRefs blks = do
     , fmap readFile $ defaultBibliography   conf
     , fmap return   $ Just ""
     ]
-  bib <- liftIO $ readBibtexInputString True txt
+  bib <- liftIO $ readBibtexString True True txt
   return bib
 
 getRefs :: Pandoc -> PluginM [Reference]
