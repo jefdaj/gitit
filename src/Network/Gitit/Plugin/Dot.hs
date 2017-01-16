@@ -32,15 +32,16 @@ plugin = mkPageTransformM transformBlock
 transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classes = do
   cfg <- askConfig
-  let prefix  = fromMaybe "dot" $ lookup "name" namevals
-      outfile = cacheDir cfg </> prefix ++ "-" ++ uniqueName contents ++ ".svg"
-      dotargs = ["-Tsvg", "-o", outfile]
-  cached <- liftIO $ doesFileExist outfile
-  unless cached $ do
-    (ec, _out, err) <- liftIO $ readProcessWithExitCode "dot" dotargs contents
-    unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
-  svg <- liftIO $ readFile outfile
-  return $ RawBlock (Format "html") svg
+  let (name, outfile) =  case lookup "name" namevals of
+                                Just fn   -> ([Str fn], fn ++ ".png")
+                                Nothing   -> ([], uniqueName contents ++ ".png")
+  liftIO $ do
+    (ec, _out, err) <- readProcessWithExitCode "dot" ["-Tpng", "-o",
+                         staticDir cfg </> "img" </> outfile] contents
+    let attr = ("image", [], [])
+    if ec == ExitSuccess
+       then return $ Para [Image attr name ("/img" </> outfile, "")]
+       else error $ "dot returned an error status: " ++ err
 transformBlock x = return x
 
 -- | Generate a unique filename given the file's contents.
