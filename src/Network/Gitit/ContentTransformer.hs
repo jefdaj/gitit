@@ -529,15 +529,15 @@ pandocToHtml pandocContents = do
   bird <- liftM ctxBirdTracks get
   cfg <- lift getConfig
   let tpl = "$if(toc)$<div id=\"TOC\">\n$toc$\n</div>\n$endif$\n$body$"
-  compiledTemplate <- liftIO $ runIOorExplode $ do
-    res <- runWithDefaultPartials $ compileTemplate "toc" tpl
-    case res of
-      Right t -> return t
-      Left e  -> throwError $ PandocTemplateError $ T.pack e
   return $ primHtml $ T.unpack .
-           (if xssSanitize cfg then sanitizeBalance else id) $
-           either E.throw id . runPure $ writeHtml5String def{
-                        writerTemplate = Just compiledTemplate
+           (if xssSanitize cfg then sanitizeBalance else id) . T.pack $
+           writeHtmlString def{
+#if MIN_VERSION_pandoc(1,19,0)
+                        writerTemplate = Just tpl
+#else
+                        writerStandalone = True
+                      , writerTemplate = tpl
+#endif
                       , writerHTMLMathMethod =
                             case mathMethod cfg of
                                  MathML -> Pandoc.MathML

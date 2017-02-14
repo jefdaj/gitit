@@ -52,7 +52,18 @@ import Skylighting (styleToCss, pygments)
 import Paths_gitit (getDataFileName)
 
 defaultRespOptions :: WriterOptions
-defaultRespOptions = def { writerHighlightStyle = Just pygments }
+defaultRespOptions = def { writerHighlight = True }
+
+respond :: String
+        -> String
+        -> (Pandoc -> IO L.ByteString)
+        -> String
+        -> Pandoc
+        -> Handler
+respond mimetype ext fn page doc = liftIO (fn doc) >>=
+  ok . setContentType mimetype .
+  (if null ext then id else setFilename (page ++ "." ++ ext)) .
+  toResponseBS B.empty
 
 respondX :: String -> String -> String
           -> (WriterOptions -> Pandoc -> PandocIO L.ByteString)
@@ -62,17 +73,17 @@ respondX templ mimetype ext fn opts page doc = do
   doc' <- if ext `elem` ["odt","pdf","beamer","epub","docx","rtf"]
              then fixURLs page doc
              else return doc
-  doc'' <- liftIO $ runIO $ do
-        setUserDataDir $ pandocUserData cfg
-        compiledTemplate <- compileDefaultTemplate (T.pack templ)
-        fn opts{ writerTemplate = Just compiledTemplate } doc'
-  either (liftIO . throwIO)
-         (ok . setContentType mimetype .
-           (if null ext then id else setFilename (page ++ "." ++ ext)) .
-            toResponseBS B.empty)
-         doc''
+  respond mimetype ext (fn opts{
+#if MIN_VERSION_pandoc(1,19,0)
+                                writerTemplate = Just template
+#else
+                                writerTemplate = template
+                               ,writerStandalone = True
+#endif
+                               ,writerUserDataDir = pandocUserData cfg})
+          page doc'
 
-respondS :: String -> String -> String -> (WriterOptions -> Pandoc -> PandocIO Text)
+respondS :: String -> String -> String -> (WriterOptions -> Pandoc -> String)
           -> WriterOptions -> String -> Pandoc -> Handler
 respondS templ mimetype ext fn =
   respondX templ mimetype ext (\o d -> return $ UTF8.fromStringLazy $ fn o d)
@@ -91,8 +102,7 @@ respondSlides templ fn page doc = do
     -- needed for the slides.)  We then pass the body into the
     -- slide template using the 'body' variable.
     Pandoc meta blocks <- fixURLs page doc
-    let body' = writeHtmlString opts'{writerStandalone = False}
-                   (Pandoc meta blocks) -- just body
+    let body' = writeHtmlString opts' (Pandoc meta blocks) -- just body
     let body'' = T.unpack
                $ (if xssSanitize cfg then sanitizeBalance else id)
                $ T.pack body'
@@ -117,7 +127,12 @@ respondSlides templ fn page doc = do
     let opts'' = opts'{
                 writerVariables =
                   ("body",body''):("dzslides-core",dzcore):("highlighting-css",pygmentsCss):variables'
+#if MIN_VERSION_pandoc(1,19,0)
+               ,writerTemplate = Just template
+#else
                ,writerTemplate = template
+               ,writerStandalone = True
+#endif
                ,writerUserDataDir = pandocUserData cfg
                }
     let h = writeHtmlString opts'' (Pandoc meta [])
@@ -222,16 +237,18 @@ respondPDF useBeamer page old_pndc = fixURLs page old_pndc >>= \pndc -> do
             Just (_modtime, bs) -> return $ Right $ L.fromChunks [bs]
             Nothing -> do
               let toc = tableOfContents cfg
-              res <- liftIO $ runIO $ do
-                setUserDataDir $ pandocUserData cfg
-                setInputFiles [baseUrl cfg]
-                let templ = if useBeamer then "beamer" else "latex"
-                compiledTemplate <- compileDefaultTemplate templ
-                makePDF "pdflatex" [] (if useBeamer then writeBeamer else writeLaTeX)
-                  defaultRespOptions{ writerTemplate = Just compiledTemplate
-                                    , writerTableOfContents = toc } pndc
-              either (liftIO . throwIO) return res
-
+              res <- liftIO $ makePDF "pdflatex" writeLaTeX
+                         defaultRespOptions{
+#if MIN_VERSION_pandoc(1,19,0)
+                                            writerTemplate = Just template
+#else
+                                            writerTemplate = template
+                                           ,writerStandalone = True
+#endif
+                                           ,writerSourceURL = Just $ baseUrl cfg
+                                           ,writerTableOfContents = toc
+                                           ,writerBeamer = useBeamer} pndc
+              return res
   case pdf' of
        Left logOutput -> simpleErrorHandler ("PDF creation failed:\n"
                            ++ UTF8.toStringLazy logOutput)
