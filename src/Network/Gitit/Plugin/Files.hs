@@ -55,6 +55,12 @@ transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
                             Right o -> let matches = restrict conds files
                                            sorted  = ordered o matches
                                        in render prefix ext sorted
+
+  -- TODO i think right before the render here ^ would be the right place to
+  --      check if "<filename>/about.page" exists. then if it does and that page
+  --      also has title metadata, put the title as the link text. obviously,
+  --      there should be a separate function or two for this.
+
   return $ RawBlock (Format "html") html
 transformBlock x = return x
 
