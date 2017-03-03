@@ -11,3 +11,5 @@ gitit-users
 github.conf
 result
 *.sw*
+.tmp
+.stack-work

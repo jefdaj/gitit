@@ -40,10 +40,4 @@ in mkDerivation {
   description = "Wiki using happstack, git or darcs, and pandoc";
   license = "GPL";
 
-  # extra depdendencies for plugins
-  buildDepends = [ graphviz myTexLive makeWrapper ];
-  postInstall = ''
-    wrapProgram $out/bin/gitit \
-      --prefix PATH : "${graphviz}/bin:${myTexLive}/bin"
-  '';
 }

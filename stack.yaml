@@ -9,3 +9,6 @@ extra-deps:
 - recaptcha-0.1.0.3
 - uri-0.1.6.4
 resolver: lts-8.0
+nix:
+  enable: true
+  shell-file: shell.nix
