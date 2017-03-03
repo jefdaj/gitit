@@ -1,7 +1,8 @@
 Gitit
 =====
 
-My fork of [gitit](https://github.com/jgm/gitit).
+My fork of [gitit](https://github.com/jgm/gitit), specialized for use as a lab notebook.
+
 This is the master branch, which is messy and consists of all my changes
 jumbled together. They can be found separately in the `feat/*` and `pullreq/*`
 branches. Here's a summary:
@@ -16,3 +17,8 @@ branches. Here's a summary:
 | compiled-plugins | works       | use plugins without the overhead of dynamic loading    |
 | citations        | in progress | automatic citations from page metadata or a bib file   |
 | related-files    | in progress | auto-list files (PDFs etc) related to current page     |
+
+Both [Nix](https://nixos.org/nix) and [Stack](https://www.haskellstack.org/)
+builds are working. I use `stack ghci` for fast incremental compilation of the
+Haskell code, or `nix-shell` to work on plugins in other languages. Then I
+`nix-build` the final package to include the plugins' runtime dependencies.
