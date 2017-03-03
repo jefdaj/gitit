@@ -164,6 +164,9 @@ extractConfig cp = do
          liftIO $ logM "gitit" WARNING "rpx-domain is not set"
       ghConfig <- extractGithubConfig cp
 
+      when (null cfUserFile) $
+         liftIO $ logM "gitit" ERROR "user-file is empty"
+
       return Config{
           repositoryPath       = cfRepositoryPath
         , repositoryType       = repotype'
