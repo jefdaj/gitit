@@ -8,7 +8,7 @@
 , uri, url, utf8-string, uuid, xhtml, xml, xss-sanitize, zlib
 }:
 mkDerivation {
-  pname = "gitit";
+  pname = "gitit-jefdaj"; # rename to prevent nixpkgs merge conflicts
   version = "0.12.2.1";
   src = ./.;
   isLibrary = true;
