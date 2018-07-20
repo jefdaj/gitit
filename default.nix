@@ -13,7 +13,7 @@ let
 in stdenv.lib.overrideDerivation gitit (oldAttrs: {
   # custom attributes go here so gitit.nix can be overwritten by cabal2nix
   executableToolDepends = [ graphviz myTex ]; # TODO is this used?
-  buildInputs = [ makeWrapper ];
+  buildInputs = [ graphviz myTex makeWrapper ];
   postInstall = ''
     wrapProgram $out/bin/gitit \
       --prefix PATH : "${graphviz}/bin" \
