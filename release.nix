@@ -1,7 +1,7 @@
 let
   sources = import ./nix/sources.nix;
 in
-{ compiler ? "ghc884"
+{ compiler ? "ghc883" # TODO update for ghc884
 , pkgs ? import sources.nixpkgs { }
 }:
 let
@@ -9,7 +9,7 @@ let
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hpNew: hpOld: {
       niv   = import sources.niv {};
-      uri   = markUnbroken hpOld.uri;
+      uri   = hpNew.callHackage "uri" "0.1.6.4" {};
       gitit = hpNew.callCabal2nix "gitit" ./. {};
     };
   };
