@@ -19,7 +19,9 @@ let
       hoauth           = hpNew.callHackage "hoauth"           "1.11.0" {};
       hslua            = hpNew.callHackage "hslua"            "1.0.3"  {};
       jira-wiki-markup = hpNew.callHackage "jira-wiki-markup" "1.0.0"  {};
-      pandoc           = hpNew.callHackage "pandoc"           "2.9.2"  {};
+      pandoc           = hpNew.callHackage "pandoc"           "2.9.1"  {};
+      doclayout           = hpNew.callHackage "doclayout"           "0.2.0.1"  {};
+      doctemplates           = hpNew.callHackage "doctemplates"           "0.8"  {};
       pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"   {};
 
     };
