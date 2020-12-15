@@ -1,7 +1,7 @@
 let
   sources = import ./nix/sources.nix;
 in
-{ compiler ? "ghc883" # TODO update for ghc884
+{ compiler ? "ghc884"
 , pkgs ? import sources.nixpkgs { }
 }:
 let

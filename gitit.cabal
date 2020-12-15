@@ -1,7 +1,6 @@
 cabal-version:       2.0
 name:                gitit
-version:             0.12.2.1
-Cabal-version:       >= 1.8
+version:             0.13.0.0
 build-type:          Simple
 synopsis:            Wiki using happstack, git or darcs, and pandoc.
 description:         Gitit is a wiki backed by a git, darcs, or mercurial
@@ -85,9 +84,9 @@ data-files:          data/static/css/screen.css, data/static/css/print.css,
                      data/markupHelp/RST, data/markupHelp/RST+LHS,
                      data/markupHelp/LaTeX, data/markupHelp/LaTeX+LHS,
                      data/markupHelp/HTML, data/markupHelp/Org,
-                     data/styles/apa,
                      plugins/CapitalizeEmphasis.hs,
                      plugins/PigLatin.hs,
+                     plugins/Dot.hs,
                      plugins/ImgTex.hs,
                      plugins/Interwiki.hs,
                      plugins/Deprofanizer.hs,
@@ -105,7 +104,7 @@ Flag plugins
   description:       Compile in support for plugins.  This will increase the size of
                      the executable and the memory it uses, so those who will not need
                      plugins should disable this flag.
-  default:           False
+  default:           True
 
 Library
   hs-source-dirs:    src
@@ -116,17 +115,15 @@ Library
                      Network.Gitit.Authentication.Github,
                      Network.Gitit.Util, Network.Gitit.Server
                      Network.Gitit.Cache, Network.Gitit.State,
-                     Paths_gitit, Network.Gitit.Export,
+                     Network.Gitit.Export,
                      Network.Gitit.Handlers,
-                     Network.Gitit.Plugin.CiteLinks,
-                     Network.Gitit.Plugin.CiteProc,
-                     Network.Gitit.Plugin.Dot,
-                     Network.Gitit.Plugin.RelatedFiles,
-                     Network.Gitit.Plugins,
-                     Network.Gitit.Rpxnow,
+                     Network.Gitit.Plugins, Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
-                     Network.Gitit.Compat.Except
-  build-depends:     base >= 3 && < 5,
+                     Network.Gitit.Compat.Except,
+                     Paths_gitit
+  autogen-modules:   Paths_gitit
+  build-depends:     base >= 4.9 && < 5,
+                     syb,
                      filepath,
                      safe,
                      parsec,
@@ -138,18 +135,18 @@ Library
                      directory,
                      mtl,
                      old-time,
-                     pandoc >= 1.12.4 && < 1.20,
-                     pandoc-types >= 1.12.3 && < 1.18,
-                     highlighting-kate >= 0.5.0.1 && < 0.7,
+                     pandoc >= 2.9 && < 2.10,
+                     pandoc-types >= 1.20 && < 1.21,
+                     skylighting >= 0.8.2.3 && < 0.9,
                      bytestring,
                      text,
                      random,
                      utf8-string >= 0.3 && < 1.1,
-                     SHA > 1 && < 1.7,
-                     HTTP >= 4000.0 && < 4000.4,
+                     SHA > 1,
+                     HTTP >= 4000.0,
                      HStringTemplate >= 0.6 && < 0.9,
-                     old-locale >= 1,
-                     time >= 1.1 && < 1.8,
+                     old-locale,
+                     time,
                      recaptcha >= 0.1,
                      filestore >= 0.6.4 && < 0.7,
                      zlib >= 0.5 && < 0.7,
@@ -164,29 +161,26 @@ Library
                      xss-sanitize >= 0.3 && < 0.4,
                      tagsoup >= 0.13 && < 0.15,
                      blaze-html >= 0.4 && < 0.10,
-                     json >= 0.4 && < 0.10,
-                     uri >= 0.1 && < 0.2,
+                     json >= 0.4 && < 0.11,
+                     uri-bytestring >= 0.2.3.3,
                      split,
-                     hoauth2 >= 0.4.2 && < 0.6,
-                     http-conduit >= 2.1.4 && < 2.3,
+                     hoauth2 >= 1.3.0 && < 1.12,
+                     xml-conduit >= 1.5 && < 1.10,
+                     http-conduit >= 2.1.6 && < 2.4,
                      http-client-tls >= 0.2.2 && < 0.4,
-                     aeson >= 0.7 && < 1.2,
-                     uuid >= 1.3 && < 1.4
-  if impl(ghc >= 6.10)
-    build-depends:   base >= 4, syb
-  if flag(network-uri)
-    build-depends:   network-uri >= 2.6 && < 2.7, network >= 2.6
-  else
-    build-depends:   network >= 2 && < 2.6
+                     aeson >= 0.7 && < 1.5,
+                     uuid >= 1.3 && < 1.4,
+                     network-uri >= 2.6,
+                     network >= 2.6 && < 3.2,
+                     network-bsd >= 2.8.1 && < 2.9,
+                     doctemplates >= 0.7.1
   if flag(plugins)
     exposed-modules: Network.Gitit.Interface
     build-depends:   ghc, ghc-paths
     cpp-options:     -D_PLUGINS
-  extensions:        CPP
-  if impl(ghc >= 6.12)
-    ghc-options:     -Wall -fno-warn-unused-do-bind
-  else
-    ghc-options:     -Wall
+  default-extensions: CPP
+  default-language:  Haskell2010
+  ghc-options:       -Wall -fno-warn-unused-do-bind
   ghc-prof-options:  -fprof-auto-exported
 
 Executable           gitit
@@ -197,28 +191,22 @@ Executable           gitit
                      mtl,
                      hslogger,
                      bytestring,
+                     text,
                      utf8-string,
-                     directory
-  if flag(network-uri)
-    build-depends:   network-uri >= 2.6 && < 2.7, network >= 2.6
-  else
-    build-depends:   network >= 2 && < 2.6
-  extensions:        CPP
-  if impl(ghc >= 6.12)
-    ghc-options:     -Wall -threaded -fno-warn-unused-do-bind
-  else
-    ghc-options:     -Wall -threaded
+                     directory,
+                     network-uri >= 2.6,
+                     network >= 2.6
+  other-modules:     Paths_gitit
+  default-extensions: CPP
+  default-language:  Haskell2010
+  ghc-options:       -Wall -threaded -fno-warn-unused-do-bind
   ghc-prof-options:  -fprof-auto-exported -rtsopts
 
 Executable           expireGititCache
   hs-source-dirs:    .
   main-is:           expireGititCache.hs
-  build-depends:     base >=3 && < 5, HTTP, url, filepath
-  if flag(network-uri)
-    build-depends:   network-uri >= 2.6 && < 2.7, network >= 2.6
-  else
-    build-depends:   network >= 2 && < 2.6
-  if impl(ghc >= 6.10)
-    build-depends:   base >= 4, syb
+  build-depends:     base >= 4.9 && < 5, HTTP, url, filepath, syb,
+                     network-uri >= 2.6,
+                     network >= 2.6
   ghc-options:       -Wall
   default-language:  Haskell2010
