@@ -14,13 +14,13 @@ let
       niv = import sources.niv {};
       gitit = hpNew.callCabal2nix "gitit" ./. {};
 
-      # keep these up to date with the cabal file,
+      # add anything needed to satisfy the cabal version bounds here,
       # and ideally remove anything that already matches the current nixpkgs
-      hoauth           = hpNew.callHackage "hoauth"           "1.11.0"  {};
-      hslua            = hpNew.callHackage "hslua"            "1.0.3"   {};
-      jira-wiki-markup = hpNew.callHackage "jira-wiki-markup" "1.1.3"   {};
-      pandoc           = hpNew.callHackage "pandoc"           "2.9.2.1" {};
-      pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"    {};
+      hoauth           = hpNew.callHackage "hoauth"           "1.11.0" {};
+      hslua            = hpNew.callHackage "hslua"            "1.0.3"  {};
+      jira-wiki-markup = hpNew.callHackage "jira-wiki-markup" "1.0.0"  {};
+      pandoc           = hpNew.callHackage "pandoc"           "2.9.2"  {};
+      pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"   {};
 
     };
   };
