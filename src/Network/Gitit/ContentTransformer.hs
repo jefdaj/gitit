@@ -347,7 +347,8 @@ applyWikiTemplate c = do
 -- | Converts Page to Pandoc, applies page transforms, and adds page
 -- title.
 pageToWikiPandoc :: Page -> ContentTransformer Pandoc
-pageToWikiPandoc page' = pageToWikiPandoc' page' >>= setTitles page'
+pageToWikiPandoc page' =
+  pageToWikiPandoc' page' >>= addPageTitleToPandoc (pageTitle page')
 
 pageToWikiPandoc' :: Page -> ContentTransformer Pandoc
 pageToWikiPandoc' = applyPreParseTransforms >=>
@@ -529,15 +530,15 @@ pandocToHtml pandocContents = do
   bird <- liftM ctxBirdTracks get
   cfg <- lift getConfig
   let tpl = "$if(toc)$<div id=\"TOC\">\n$toc$\n</div>\n$endif$\n$body$"
+  compiledTemplate <- liftIO $ runIOorExplode $ do
+    res <- runWithDefaultPartials $ compileTemplate "toc" tpl
+    case res of
+      Right t -> return t
+      Left e  -> throwError $ PandocTemplateError $ T.pack e
   return $ primHtml $ T.unpack .
-           (if xssSanitize cfg then sanitizeBalance else id) . T.pack $
-           writeHtmlString def{
-#if MIN_VERSION_pandoc(1,19,0)
-                        writerTemplate = Just tpl
-#else
-                        writerStandalone = True
-                      , writerTemplate = tpl
-#endif
+           (if xssSanitize cfg then sanitizeBalance else id) $
+           either E.throw id . runPure $ writeHtml5String def{
+                        writerTemplate = Just compiledTemplate
                       , writerHTMLMathMethod =
                             case mathMethod cfg of
                                  MathML -> Pandoc.MathML
@@ -638,27 +639,6 @@ wikiDivify c = do
                           else thediv ! [identifier "categoryList"] << ulist << map categoryLink categories
   return $ thediv ! [identifier "wikipage"] << [c, htmlCategories]
 
-{- This picks the best title for the current page. Priorities:
- -
- - (1) A title specified in the Pandoc document
- - (2) A title specified in the page metadata
- - (3) The path of the page in the repository
- -
- - It would probably make more sense to set (1) to match (2) before
- - applying PageTransforms; I just thought of this way first.
- -}
-setTitles :: Page -> Pandoc -> ContentTransformer Pandoc
-setTitles page doc@(Pandoc m bs) = do
-  ctx <- get
-  let pTitle = pageTitle page
-      pName  = pgPageName $ ctxLayout ctx
-      pDoc   = Pandoc (B.setMeta "title" (B.str pTitle) m) bs
-      dTitle = inlinesToString $ docTitle m
-      dBest  = (null pTitle || pTitle == pName) && (not $ null dTitle)
-      (title', doc') = if dBest then (dTitle, doc) else (pTitle, pDoc)
-  updateLayout $ \layout -> layout { pgTitle = title' }
-  return doc'
-
 -- | Adds page title to a Pandoc document.
 addPageTitleToPandoc :: String -> Pandoc -> ContentTransformer Pandoc
 addPageTitleToPandoc title' (Pandoc _ blocks) = do
@@ -741,17 +721,11 @@ wikiLinksTransform pandoc
 
 -- | Convert links with no URL to wikilinks.
 convertWikiLinks :: Config -> Inline -> Inline
-#if MIN_VERSION_pandoc(1,16,0)
 convertWikiLinks cfg (Link attr ref ("", "")) | useAbsoluteUrls cfg =
-  Link attr ref ("/" </> baseUrl cfg </> inlinesToURL ref, "Go to wiki page")
+  Link attr ref (T.pack ("/" </> baseUrl cfg </> inlinesToURL ref),
+                 "Go to wiki page")
 convertWikiLinks _cfg (Link attr ref ("", "")) =
-  Link attr ref (inlinesToURL ref, "Go to wiki page")
-#else
-convertWikiLinks cfg (Link ref ("", "")) | useAbsoluteUrls cfg =
-  Link ref ("/" </> baseUrl cfg </> inlinesToURL ref, "Go to wiki page")
-convertWikiLinks _cfg (Link ref ("", "")) =
-  Link ref (inlinesToURL ref, "Go to wiki page")
-#endif
+  Link attr ref (T.pack (inlinesToURL ref), "Go to wiki page")
 convertWikiLinks _cfg x = x
 
 -- | Derives a URL from a list of Pandoc Inline elements.
@@ -775,21 +749,14 @@ inlinesToString = T.unpack . mconcat . map go
                Cite _ xs               -> mconcat $ map go xs
                Code _ s                -> s
                Space                   -> " "
-#if MIN_VERSION_pandoc(1,16,0)
                SoftBreak               -> " "
-#endif
                LineBreak               -> " "
                Math DisplayMath s      -> "$$" <> s <> "$$"
                Math InlineMath s       -> "$" <> s <> "$"
                RawInline (Format "tex") s -> s
                RawInline _ _           -> ""
-#if MIN_VERSION_pandoc(1,16,0)
-               Link _ xs _             -> concatMap go xs
-               Image _ xs _            -> concatMap go xs
-#else
-               Link xs _               -> concatMap go xs
-               Image xs _              -> concatMap go xs
-#endif
+               Link _ xs _             -> mconcat $ map go xs
+               Image _ xs _            -> mconcat $ map go xs
                Note _                  -> ""
                Span _ xs               -> mconcat $ map go xs
 

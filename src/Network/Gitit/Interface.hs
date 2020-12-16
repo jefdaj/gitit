@@ -99,15 +99,6 @@ you can also find them in the directory
 @CABALDIR\/share\/gitit-X.Y.Z\/plugins@, where @CABALDIR@ is the cabal
 install directory and @X.Y.Z@ is the version number of gitit.
 
-TODO add duplicated functions here as utilities:
-  askFile
-  askName
-  link2path
-  listFiles
-  reqDir (that's somewhere already right?)
-  render (but rename it)
-  resPath?
-  uri2path
 -}
 
 module Network.Gitit.Interface ( Plugin(..)
@@ -126,7 +117,6 @@ module Network.Gitit.Interface ( Plugin(..)
                                , askFileStore
                                , askMeta
                                , doNotCache
-                               , fileListToHtmlNoUplink
                                , getContext
                                , modifyContext
                                , inlinesToURL
@@ -135,14 +125,12 @@ module Network.Gitit.Interface ( Plugin(..)
                                , withTempDir
                                , module Text.Pandoc.Definition
                                , module Text.Pandoc.Generic
-
                                )
 where
 import Text.Pandoc.Definition
 import Text.Pandoc.Generic
 import Data.Data
 import Network.Gitit.Types
-import Network.Gitit.Handlers (fileListToHtmlNoUplink)
 import Network.Gitit.ContentTransformer
 import Network.Gitit.Util (withTempDir)
 import Network.Gitit.Server (Request(..))
@@ -150,11 +138,6 @@ import Control.Monad.Reader (ask)
 import Control.Monad.Trans (liftIO)
 import Control.Monad (liftM)
 import Data.FileStore (FileStore)
-import Data.Map (insert)
-import System.FilePath (takeBaseName)
-import Data.FileStore (Resource(FSFile, FSDirectory), directory)
-import Data.List (intercalate)
-import Control.Exception (try, SomeException)
 
 -- | Returns the current wiki configuration.
 askConfig :: PluginM Config
@@ -190,3 +173,4 @@ mkPageTransform fn = PageTransform $ return . bottomUp fn
 -- Lifts a function from @a -> m a@ to a 'PageTransform' plugin.
 mkPageTransformM :: Data a => (a -> PluginM a) -> Plugin
 mkPageTransformM =  PageTransform . bottomUpM
+

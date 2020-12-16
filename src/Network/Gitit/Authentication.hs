@@ -474,7 +474,7 @@ githubAuthHandlers :: GithubConfig
                    -> [Handler]
 githubAuthHandlers ghConfig =
   [ dir "_logout" $ withData logoutUser
-  , dir "_login" $ loginGithubUser $ oAuth2 ghConfig
+  , dir "_login" $ withData $ loginGithubUser $ oAuth2 ghConfig
   , dir "_loginFailure" $ githubLoginFailure
   , dir "_githubCallback" $ withData $ oauthGithubCallback ghConfig
   , dir "_user" currentUser ]

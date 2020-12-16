@@ -20,18 +20,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 {- Functions for loading plugins.
 -}
 
--- TODO: epic idea: *all* citations become links if there are pages
-
-module Network.Gitit.Plugins ( loadPlugin, loadPlugins, compiledPlugins )
+module Network.Gitit.Plugins ( loadPlugin, loadPlugins )
 where
 import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
-import qualified Network.Gitit.Plugin.CiteProc as CiteProc
-import qualified Network.Gitit.Plugin.Csv as Csv
-import qualified Network.Gitit.Plugin.Dot as Dot
-import qualified Network.Gitit.Plugin.Files as Files
 #ifdef _PLUGINS
 import Data.List (isInfixOf, isPrefixOf)
 import GHC
@@ -59,23 +53,10 @@ loadPlugin pluginName = do
                else if "Network/Gitit/Plugin/" `isInfixOf` pluginName
                        then "Network.Gitit.Plugin." ++ takeBaseName pluginName
                        else takeBaseName pluginName
-#if MIN_VERSION_ghc(7,4,0)
       pr <- parseImportDecl "import Prelude"
       i <- parseImportDecl "import Network.Gitit.Interface"
       m <- parseImportDecl ("import " ++ modName)
       setContext [IIDecl m, IIDecl  i, IIDecl pr]
-#else
-      pr <- findModule (mkModuleName "Prelude") Nothing
-      i <- findModule (mkModuleName "Network.Gitit.Interface") Nothing
-      m <- findModule (mkModuleName modName) Nothing
-#if MIN_VERSION_ghc(7,2,0)
-      setContext [IIModule m, IIModule i, IIModule pr] []
-#elif MIN_VERSION_ghc(7,0,0)
-      setContext [] [(m, Nothing), (i, Nothing), (pr, Nothing)]
-#else
-      setContext [] [m, i, pr]
-#endif
-#endif
       value <- compileExpr (modName ++ ".plugin :: Plugin")
       let value' = (unsafeCoerce value) :: Plugin
       return value'
@@ -90,16 +71,9 @@ loadPlugin pluginName = do
 
 #endif
 
--- TODO: get RelatedFiles working 
--- TODO: get CiteLinks working (and absorb into CiteProc?)
-compiledPlugins :: [Plugin]
-compiledPlugins =
-  [ CiteProc.plugin
-  , Dot.plugin
-  ]
-
 loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
   plugins' <- mapM loadPlugin pluginNames
   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
-  return $ plugins'
+  return plugins'
+

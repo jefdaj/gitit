@@ -50,7 +50,6 @@ module Network.Gitit.Handlers (
                       , showHighlightedSource
                       , expireCache
                       , feedHandler
-                      , fileListToHtmlNoUplink
                       )
 where
 import Safe
@@ -205,7 +204,6 @@ uploadFile = withData $ \(params :: Params) -> do
                       if e == NotFound
                          then return False
                          else E.throwIO e >> return True
-  let inCacheDir  = cacheDir  cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let inStaticDir = staticDir cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let inTemplatesDir = templatesDir cfg `isPrefixOf` (repositoryPath cfg </> wikiname)
   let dirs' = splitDirectories $ takeDirectory wikiname
@@ -215,7 +213,6 @@ uploadFile = withData $ \(params :: Params) -> do
                     "Description cannot be empty.")
                  , (".." `elem` dirs', "Wikiname cannot contain '..'")
                  , (null origPath, "File not found.")
-                 , (inCacheDir,  "Destination is inside cache directory.")
                  , (inStaticDir,  "Destination is inside static directory.")
                  , (inTemplatesDir,  "Destination is inside templates directory.")
                  , (not overwrite && exists, "A file named '" ++ wikiname ++
@@ -687,13 +684,7 @@ indexPage = do
                   pgTitle = "Contents"} htmlIndex
 
 fileListToHtml :: String -> String -> String -> [Resource] -> Html
-fileListToHtml = fileListToHtmlOptionalUplink True
-
-fileListToHtmlNoUplink :: String -> String -> String -> [Resource] -> Html
-fileListToHtmlNoUplink = fileListToHtmlOptionalUplink False
-
-fileListToHtmlOptionalUplink :: Bool -> String -> String -> String -> [Resource] -> Html
-fileListToHtmlOptionalUplink withUplink base' prefix ext files =
+fileListToHtml base' prefix ext files =
   let fileLink (FSFile f) | takeExtension f == "." ++ ext =
         li ! [theclass "page"  ] <<
           anchor ! [href $ base' ++ urlForPage (prefix ++ dropExtension f)] <<
@@ -713,10 +704,7 @@ fileListToHtmlOptionalUplink withUplink base' prefix ext files =
                                                    else base' ++
                                                         urlForPage (joinPath $ drop 1 d)] <<
                   lastNote "fileListToHtml" d, accum]) noHtml updirs
-      fileLinks = ulist ! [theclass "index"] << map fileLink files
-  in case withUplink of
-       True  -> uplink +++ fileLinks
-       False -> fileLinks
+  in uplink +++ ulist ! [theclass "index"] << map fileLink files
 
 -- NOTE:  The current implementation of categoryPage does not go via the
 -- filestore abstraction.  That is bad, but can only be fixed if we add

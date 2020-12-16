@@ -1,14 +1,25 @@
+nix:
+  enable: false
+  packages: [zlib zlib.dev]
+
 flags:
   gitit:
     plugins: true
-    network-uri: true
 packages:
 - '.'
 extra-deps:
-- filestore-0.6.3.1
-- recaptcha-0.1.0.3
-- uri-0.1.6.4
-resolver: lts-8.3
-nix:
-  enable: true
-  packages: [zlib]
+- base-noprelude-4.13.0.0
+- ConfigFile-1.1.4
+- doclayout-0.3
+- doctemplates-0.8.2
+- filestore-0.6.4
+- happstack-server-7.6.0
+- jira-wiki-markup-1.1.4
+- json-0.10
+- MissingH-1.4.3.0
+- pandoc-2.9.2.1
+- pandoc-types-1.20
+- recaptcha-0.1.0.4
+
+allow-newer: true
+resolver: lts-15.10

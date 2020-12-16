@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 module Network.Gitit.Initialize ( initializeGititState
                                 , recompilePageTemplate
                                 , compilePageTemplate
-                                , createCacheIfMissing
                                 , createStaticIfMissing
                                 , createRepoIfMissing
                                 , createDefaultPages
@@ -54,7 +53,6 @@ initializeGititState conf = do
   let userFile' = userFile conf
       pluginModules' = pluginModules conf
   plugins' <- loadPlugins pluginModules'
-  let plugins'' = compiledPlugins ++ plugins'
 
   userFileExists <- doesFileExist userFile'
   users' <- if userFileExists
@@ -67,7 +65,7 @@ initializeGititState conf = do
                              , users         = users'
                              , templatesPath = templatesDir conf
                              , renderPage    = defaultRenderPage templ
-                             , plugins       = plugins'' }
+                             , plugins       = plugins' }
 
 -- | Recompile the page template.
 recompilePageTemplate :: IO ()
@@ -92,11 +90,6 @@ compilePageTemplate tempsDir = do
   case ST.getStringTemplate "page" combinedGroup of
         Just t    -> return t
         Nothing   -> error "Could not get string template"
-
-createCacheIfMissing :: Config -> IO ()
-createCacheIfMissing c = do
-  createDirectoryIfMissing True $ cacheDir c
-  createDirectoryIfMissing True $ cacheDir c </> "img"
 
 -- | Create templates dir if it doesn't exist.
 createTemplateIfMissing :: Config -> IO ()
@@ -130,30 +123,24 @@ createDefaultPages :: Config -> IO ()
 createDefaultPages conf = do
     let fs = filestoreFromConfig conf
         pt = defaultPageType conf
-        toPandoc = handleError . readMarkdown def{ readerSmart = True }
-        defOpts = def{ writerHTMLMathMethod = JsMath
-                              (Just "/js/jsMath/easy/load.js")
-                     , writerExtensions = if showLHSBirdTracks conf
-                                             then Set.insert
+        toPandoc = readMarkdown def{ readerExtensions = enableExtension Ext_smart (readerExtensions def) }
+        defOpts = def{ writerExtensions = if showLHSBirdTracks conf
+                                             then enableExtension
                                                   Ext_literate_haskell
                                                   $ writerExtensions def
                                              else writerExtensions def
                      }
         -- note: we convert this (markdown) to the default page format
-        converter = case pt of
-                       Markdown   -> id
-                       LaTeX      -> writeLaTeX defOpts . toPandoc
-                       HTML       -> writeHtmlString defOpts . toPandoc
-                       RST        -> writeRST defOpts . toPandoc
-                       Textile    -> writeTextile defOpts . toPandoc
-                       Org        -> writeOrg defOpts . toPandoc
-                       DocBook    -> writeDocbook defOpts . toPandoc
-                       MediaWiki  -> writeMediaWiki defOpts . toPandoc
-#if MIN_VERSION_pandoc(1,14,0)
-                       CommonMark -> writeCommonMark defOpts . toPandoc
-#else
-                       CommonMark -> error "CommonMark support requires pandoc >= 1.14"
-#endif
+        converter = handleError . runPure . case pt of
+                       Markdown   -> return
+                       LaTeX      -> writeLaTeX defOpts <=< toPandoc
+                       HTML       -> writeHtml5String defOpts <=< toPandoc
+                       RST        -> writeRST defOpts <=< toPandoc
+                       Textile    -> writeTextile defOpts <=< toPandoc
+                       Org        -> writeOrg defOpts <=< toPandoc
+                       DocBook    -> writeDocbook5 defOpts <=< toPandoc
+                       MediaWiki  -> writeMediaWiki defOpts <=< toPandoc
+                       CommonMark -> writeCommonMark defOpts <=< toPandoc
 
     welcomepath <- getDataFileName $ "data" </> "FrontPage" <.> "page"
     welcomecontents <- converter =<< readFileUTF8 welcomepath
@@ -173,9 +160,9 @@ createDefaultPages conf = do
     createIfMissing fs (frontPage conf <.> defaultExtension conf) auth "Default front page"
       $ header <> welcomecontents
     createIfMissing fs ("Help" <.> defaultExtension conf) auth "Default help page"
-      $ header ++ helpcontents
+      $ header <> helpcontents
     createIfMissing fs ("Gitit User’s Guide" <.> defaultExtension conf) auth "User’s guide (README)"
-      $ header ++ usersguidecontents
+      $ header <> usersguidecontents
 
 createIfMissing :: FileStore -> FilePath -> Author -> Description -> Text -> IO ()
 createIfMissing fs p a comm cont = do

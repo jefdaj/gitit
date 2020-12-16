@@ -27,8 +27,8 @@ import Text.Pandoc hiding (HTMLMathMethod(..), getDataFileName)
 import qualified Text.Pandoc as Pandoc
 import Text.Pandoc.PDF (makePDF)
 import Text.Pandoc.SelfContained as SelfContained
-import Text.Pandoc.Shared (readDataFileUTF8)
 import qualified Text.Pandoc.UTF8 as UTF8
+import qualified Data.Map as M
 import Network.Gitit.Server
 import Network.Gitit.Framework (pathForPage)
 import Network.Gitit.State (getConfig)
@@ -52,18 +52,7 @@ import Skylighting (styleToCss, pygments)
 import Paths_gitit (getDataFileName)
 
 defaultRespOptions :: WriterOptions
-defaultRespOptions = def { writerHighlight = True }
-
-respond :: String
-        -> String
-        -> (Pandoc -> IO L.ByteString)
-        -> String
-        -> Pandoc
-        -> Handler
-respond mimetype ext fn page doc = liftIO (fn doc) >>=
-  ok . setContentType mimetype .
-  (if null ext then id else setFilename (page ++ "." ++ ext)) .
-  toResponseBS B.empty
+defaultRespOptions = def { writerHighlightStyle = Just pygments }
 
 respondX :: String -> String -> String
           -> (WriterOptions -> Pandoc -> PandocIO L.ByteString)
@@ -73,20 +62,20 @@ respondX templ mimetype ext fn opts page doc = do
   doc' <- if ext `elem` ["odt","pdf","beamer","epub","docx","rtf"]
              then fixURLs page doc
              else return doc
-  respond mimetype ext (fn opts{
-#if MIN_VERSION_pandoc(1,19,0)
-                                writerTemplate = Just template
-#else
-                                writerTemplate = template
-                               ,writerStandalone = True
-#endif
-                               ,writerUserDataDir = pandocUserData cfg})
-          page doc'
+  doc'' <- liftIO $ runIO $ do
+        setUserDataDir $ pandocUserData cfg
+        compiledTemplate <- compileDefaultTemplate (T.pack templ)
+        fn opts{ writerTemplate = Just compiledTemplate } doc'
+  either (liftIO . throwIO)
+         (ok . setContentType mimetype .
+           (if null ext then id else setFilename (page ++ "." ++ ext)) .
+            toResponseBS B.empty)
+         doc''
 
-respondS :: String -> String -> String -> (WriterOptions -> Pandoc -> String)
+respondS :: String -> String -> String -> (WriterOptions -> Pandoc -> PandocIO Text)
           -> WriterOptions -> String -> Pandoc -> Handler
 respondS templ mimetype ext fn =
-  respondX templ mimetype ext (\o d -> return $ UTF8.fromStringLazy $ fn o d)
+  respondX templ mimetype ext (\o d -> fromStrict . encodeUtf8 <$> fn o d)
 
 respondSlides :: String -> (WriterOptions -> Pandoc -> PandocIO Text) -> String -> Pandoc -> Handler
 respondSlides templ fn page doc = do
@@ -102,48 +91,42 @@ respondSlides templ fn page doc = do
     -- needed for the slides.)  We then pass the body into the
     -- slide template using the 'body' variable.
     Pandoc meta blocks <- fixURLs page doc
-    let body' = writeHtmlString opts' (Pandoc meta blocks) -- just body
-    let body'' = T.unpack
-               $ (if xssSanitize cfg then sanitizeBalance else id)
-               $ T.pack body'
-    variables' <- if mathMethod cfg == MathML
-                     then do
-                        s <- liftIO $ readDataFileUTF8 (pandocUserData cfg)
-                                  "MathMLinHTML.js"
-                        return [("mathml-script", s)]
-                     else return []
-    template' <- liftIO $ getDefaultTemplate (pandocUserData cfg) templ
-    template <- case template' of
-                     Right t  -> return t
-                     Left e   -> liftIO $ throwIO e
-    dzcore <- if templ == "dzslides"
-                  then do
-                    dztempl <- liftIO $ readDataFileUTF8 (pandocUserData cfg)
-                           $ "dzslides" </> "template.html"
-                    return $ unlines
-                        $ dropWhile (not . isPrefixOf "<!-- {{{{ dzslides core")
-                        $ lines dztempl
-                  else return ""
-    let opts'' = opts'{
-                writerVariables =
-                  ("body",body''):("dzslides-core",dzcore):("highlighting-css",pygmentsCss):variables'
-#if MIN_VERSION_pandoc(1,19,0)
-               ,writerTemplate = Just template
-#else
-               ,writerTemplate = template
-               ,writerStandalone = True
-#endif
-               ,writerUserDataDir = pandocUserData cfg
-               }
-    let h = writeHtmlString opts'' (Pandoc meta [])
-#if MIN_VERSION_pandoc(1,13,0)
-    h' <- liftIO $ makeSelfContained opts'' h
-#else
-    h' <- liftIO $ makeSelfContained (pandocUserData cfg) h
-#endif
-    ok . setContentType "text/html;charset=UTF-8" .
-      -- (setFilename (page ++ ".html")) .
-      toResponseBS B.empty $ UTF8.fromStringLazy h'
+    docOrError <- liftIO $ runIO $ do
+          setUserDataDir $ pandocUserData cfg
+          body' <- writeHtml5String opts' (Pandoc meta blocks) -- just body
+          let body'' = T.unpack
+                       $ (if xssSanitize cfg then sanitizeBalance else id)
+                       $ body'
+          let setVariable key val (DT.Context ctx) =
+                DT.Context $ M.insert (T.pack key) (toVal (T.pack val)) ctx
+          variables' <- if mathMethod cfg == MathML
+                          then do
+                              s <- readDataFile "MathMLinHTML.js"
+                              return $ setVariable "mathml-script"
+                                         (UTF8.toString s) mempty
+                          else return mempty
+          compiledTemplate <- compileDefaultTemplate (T.pack templ)
+          dzcore <- if templ == "dzslides"
+                      then do
+                        dztempl <- readDataFile $ "dzslides" </> "template.html"
+                        return $ unlines
+                            $ dropWhile (not . isPrefixOf "<!-- {{{{ dzslides core")
+                            $ lines $ UTF8.toString dztempl
+                      else return ""
+          let opts'' = opts'{
+                             writerVariables =
+                               setVariable "body" body'' $
+                               setVariable "dzslides-core" dzcore $
+                               setVariable "highlighting-css" pygmentsCss
+                               $ variables'
+                            ,writerTemplate = Just compiledTemplate }
+          h <- fn opts'' (Pandoc meta [])
+          makeSelfContained h
+    either (liftIO . throwIO)
+           (ok . setContentType "text/html;charset=UTF-8" .
+             (setFilename (page ++ ".html")) .
+             toResponseBS B.empty . L.fromStrict . UTF8.fromText)
+           docOrError
 
 respondLaTeX :: String -> Pandoc -> Handler
 respondLaTeX = respondS "latex" "application/x-latex" "tex"
@@ -156,7 +139,7 @@ respondConTeXt = respondS "context" "application/x-context" "tex"
 
 respondRTF :: String -> Pandoc -> Handler
 respondRTF = respondX "rtf" "application/rtf" "rtf"
-  (\o d -> UTF8.fromStringLazy `fmap` writeRTFWithEmbeddedImages o d) defaultRespOptions
+  (\o d -> L.fromStrict . UTF8.fromText <$> writeRTF o d) defaultRespOptions
 
 respondRST :: String -> Pandoc -> Handler
 respondRST = respondS "rst" "text/plain; charset=utf-8" ""
@@ -190,15 +173,10 @@ respondOrg :: String -> Pandoc -> Handler
 respondOrg = respondS "org" "text/plain; charset=utf-8" ""
   writeOrg defaultRespOptions
 
-#if MIN_VERSION_pandoc(1,16,0)
 respondICML :: String -> Pandoc -> Handler
 respondICML = respondX "icml" "application/xml; charset=utf-8" ""
-              (\o d -> fmap UTF8.fromStringLazy $ writeICML o d)
+              (\o d -> L.fromStrict . UTF8.fromText <$> writeICML o d)
                          defaultRespOptions
-#else
-respondICML = respondS "icml" "application/xml; charset=utf-8" ""
-              writeICML defaultRespOptions
-#endif
 
 respondTextile :: String -> Pandoc -> Handler
 respondTextile = respondS "textile" "text/plain; charset=utf-8" ""
@@ -237,21 +215,19 @@ respondPDF useBeamer page old_pndc = fixURLs page old_pndc >>= \pndc -> do
             Just (_modtime, bs) -> return $ Right $ L.fromChunks [bs]
             Nothing -> do
               let toc = tableOfContents cfg
-              res <- liftIO $ makePDF "pdflatex" writeLaTeX
-                         defaultRespOptions{
-#if MIN_VERSION_pandoc(1,19,0)
-                                            writerTemplate = Just template
-#else
-                                            writerTemplate = template
-                                           ,writerStandalone = True
-#endif
-                                           ,writerSourceURL = Just $ baseUrl cfg
-                                           ,writerTableOfContents = toc
-                                           ,writerBeamer = useBeamer} pndc
-              return res
+              res <- liftIO $ runIO $ do
+                setUserDataDir $ pandocUserData cfg
+                setInputFiles [baseUrl cfg]
+                let templ = if useBeamer then "beamer" else "latex"
+                compiledTemplate <- compileDefaultTemplate templ
+                makePDF "pdflatex" [] (if useBeamer then writeBeamer else writeLaTeX)
+                  defaultRespOptions{ writerTemplate = Just compiledTemplate
+                                    , writerTableOfContents = toc } pndc
+              either (liftIO . throwIO) return res
+
   case pdf' of
-       Left logOutput -> simpleErrorHandler ("PDF creation failed:\n"
-                           ++ UTF8.toStringLazy logOutput)
+       Left logOutput' -> simpleErrorHandler ("PDF creation failed:\n"
+                           ++ UTF8.toStringLazy logOutput')
        Right pdfBS -> do
               case cached of
                 Nothing ->
@@ -261,44 +237,34 @@ respondPDF useBeamer page old_pndc = fixURLs page old_pndc >>= \pndc -> do
                         (toResponse noHtml) {rsBody = pdfBS}
 
 -- | When we create a PDF or ODT from a Gitit page, we need to fix the URLs of any
--- images on the page. Those URLs will often be relative to the staticDir or cacheDir, but the
+-- images on the page. Those URLs will often be relative to the staticDir, but the
 -- PDF or ODT processor only understands paths relative to the working directory.
 --
 -- Because the working directory will not in general be the root of the gitit instance
 -- at the time the Pandoc is fed to e.g. pdflatex, this function replaces the URLs of
--- images in the staticDir or cacheDir with their correct absolute file path.
+-- images in the staticDir with their correct absolute file path.
 fixURLs :: String -> Pandoc -> GititServerPart Pandoc
 fixURLs page pndc = do
     cfg <- getConfig
     defaultStatic <- liftIO $ getDataFileName $ "data" </> "static"
 
     let static = staticDir cfg
-        cache  = cacheDir  cfg
     let repoPath = repositoryPath cfg
 
-#if MIN_VERSION_pandoc(1,16,0)
     let go (Image attr ils (url, title)) = do
-           fixedURL <- fixURL url
-           return $ Image attr ils (fixedURL, title)
-#else
-    let go (Image ils (url, title)) = do
-           fixedURL <- fixURL url
-           return $ Image ils (fixedURL, title)
-#endif
+           fixedURL <- fixURL $ T.unpack url
+           return $ Image attr ils (T.pack fixedURL, title)
         go x                        = return x
 
         fixURL ('/':url) = resolve url
         fixURL url       = resolve $ takeDirectory page </> url
 
         resolve p = do
-           cp <- doesFileExist $ cache  </> p
            sp <- doesFileExist $ static </> p
            dsp <- doesFileExist $ defaultStatic </> p
            return (if sp then static </> p
-                    else (if dsp then defaultStatic </> p
-                      else (if cp then cache </> p
-                        else repoPath </> p)))
-
+                   else (if dsp then defaultStatic </> p
+                         else repoPath </> p))
     liftIO $ bottomUpM go pndc
 
 exportFormats :: Config -> [(String, String -> Pandoc -> Handler)]
