@@ -4,25 +4,33 @@ let
               then sources.nixpkgs-darwin
               else sources.nixpkgs;
 in
-{ compiler ? "ghc884" # ideally, this should match the stack lts resolver
+{ compiler ? "ghc883" # matches lts-15.10 resolver in stack.yaml
 , pkgs ? import nixpkgs { }
 }:
 let
-  inherit (pkgs.haskell.lib) markUnbroken;
+  inherit (pkgs.haskell.lib) markUnbroken dontCheck;
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hpNew: hpOld: {
       niv = import sources.niv {};
       gitit = hpNew.callCabal2nix "gitit" ./. {};
 
-      # add anything needed to satisfy the cabal version bounds here,
-      # and ideally remove anything that already matches the current nixpkgs
-      hoauth           = hpNew.callHackage "hoauth"           "1.11.0" {};
-      hslua            = hpNew.callHackage "hslua"            "1.0.3"  {};
-      jira-wiki-markup = hpNew.callHackage "jira-wiki-markup" "1.0.0"  {};
-      pandoc           = hpNew.callHackage "pandoc"           "2.9.1"  {};
-      doclayout           = hpNew.callHackage "doclayout"           "0.2.0.1"  {};
-      doctemplates           = hpNew.callHackage "doctemplates"           "0.8"  {};
-      pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"   {};
+      # extra-deps from stack.yaml
+      base-noprelude   = hpNew.callHackage "base-noprelude"   "4.13.0.0"  {};
+      ConfigFile       = hpNew.callHackage "ConfigFile"       "1.1.4"     {};
+      doclayout        = hpNew.callHackage "doclayout"        "0.3"       {};
+      doctemplates     = hpNew.callHackage "doctemplates"     "0.8.2"     {};
+      filestore        = dontCheck (hpNew.callHackage "filestore" "0.6.4" {}); # tests require hg
+      happstack-server = hpNew.callHackage "happstack-server" "7.6.0"     {};
+      jira-wiki-markup = hpNew.callHackage "jira-wiki-markup" "1.1.4"     {};
+      json             = hpNew.callHackage "json"             "0.10"      {};
+      MissingH         = hpNew.callHackage "MissingH"         "1.4.3.0"   {};
+      pandoc           = dontCheck (hpNew.callHackage "pandoc" "2.9.2.1"  {}); # TODO what's wrong here?
+      pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"      {};
+      recaptcha        = hpNew.callHackage "recaptcha"        "0.1.0.4"   {};
+
+      # added to satisfy cabal version bounds
+      hslua        = hpNew.callHackage "hslua"        "1.0.3.2"   {};
+      hoauth2        = hpNew.callHackage "hoauth2"        "1.11.0"   {};
 
     };
   };
