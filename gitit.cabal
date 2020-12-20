@@ -117,6 +117,7 @@ Library
                      Network.Gitit.Export,
                      Network.Gitit.Handlers,
                      Network.Gitit.Plugins,
+                     Network.Gitit.Plugins.Csv,
                      Network.Gitit.Plugins.Dot,
                      Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
