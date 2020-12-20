@@ -3,9 +3,9 @@ Gitit
 
 My fork of [gitit](https://github.com/jgm/gitit), specialized for use as a lab notebook.
 
-This is the master branch, which is messy and consists of all my changes
-jumbled together. They can be found separately in the `feat/*` and `pullreq/*`
-branches. Here's a summary:
+The master branch is messy and consists of the upstream gitit release (v0.13.0)
++ all my working feature branches. Stable versions are tagged. Here's a summary
+of the other feature branches, which are each rebased separate from upstream:
 
 | feature          | status      | description                                            |
 |:-----------------|:------------|:-------------------------------------------------------|
@@ -23,18 +23,3 @@ Both [Nix](https://nixos.org/nix) and [Stack](https://www.haskellstack.org/)
 builds are working. I use `stack ghci` for fast incremental compilation of the
 Haskell code, or `nix-shell` to work on plugins in other languages. Then I
 `nix-build` the final package to include the plugins' runtime dependencies.
-
-Compiling
----------
-
-Use `nix-build` to build the gitit binaries, or `nix-shell`
-to enter a shell with preinstalled dependencies suitable for hacking.
-Note that the shell doesn't include its own cabal-install.
-To build inside the shell, do:
-
-    nix-shell
-    cabal update
-    cabal configure
-    cabal build
-
-Or you can substitute `cabal repl` at the end.
