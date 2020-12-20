@@ -9,7 +9,6 @@ of the other feature branches, which are each rebased separate from upstream:
 
 | feature          | status      | description                                            |
 |:-----------------|:------------|:-------------------------------------------------------|
-| nix-build        | works       | build with the Nix package manager                     |
 | cache-dir        | works       | provide plugins access to the cache                    |
 | csv-plugin       | works       | render CSV (inline or from files) as markdown tables   |
 | files-plugin     | works       | render clickable lists of files                        |
