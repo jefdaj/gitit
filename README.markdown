@@ -19,6 +19,13 @@ of the other feature branches, which are each rebased separately from upstream:
 | related-files    | in progress | auto-list files (PDFs etc) related to current page     |
 
 Both [Nix](https://nixos.org/nix) and [Stack](https://www.haskellstack.org/)
-builds are working. I use `stack ghci` for fast incremental compilation of the
-Haskell code, or `nix-shell` to work on plugins in other languages. Then I
-`nix-build` the final package to include the plugins' runtime dependencies.
+builds should be working, but I use the Nix workflow:
+
+```
+# development
+nix-shell --run 'cabal repl'
+nix-shell --run 'cabal build'
+
+# final build
+nix-build
+```
