@@ -39,9 +39,10 @@ let
 
   # overrides for the auto-generated gitit package above go here
   project = overrideCabal haskellPackages.gitit (old: {
-    executableSystemDepends = [
-      pkgs.graphviz
-      # TODO latex/pdflatex
+    executableSystemDepends = with pkgs; [
+      graphviz
+      texlive.combined.scheme-full # TODO is this overkill? it includes every TeX package
+      # TODO system-sendmail?
     ];
   });
 
