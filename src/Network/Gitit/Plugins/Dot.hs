@@ -10,10 +10,11 @@ module Network.Gitit.Plugins.Dot (plugin) where
 -- ~~~
 --
 -- The "dot" executable must be in the path.
--- The generated png file will be saved in the static img directory.
--- If no name is specified, a unique name will be generated from a hash
--- of the file contents.
+-- The generated svg file will be cached in the cache directory.
+-- A unique name will be generated from a hash of the file contents,
+-- prefixed with the 'name' attribute if one is given.
 
+import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(ExitSuccess))
@@ -21,9 +22,11 @@ import System.Exit (ExitCode(ExitSuccess))
 import Data.ByteString.Lazy.UTF8 (fromString)
 -- from the SHA package on HackageDB:
 import Data.Digest.Pure.SHA (sha1, showDigest)
+import System.Directory (doesFileExist)
 import System.FilePath ((</>))
-import Data.Text (pack, unpack)
+import Control.Monad (unless)
 import Control.Monad.Trans (liftIO)
+import Data.Text (pack, unpack)
 
 plugin :: Plugin
 plugin = mkPageTransformM transformBlock
@@ -31,17 +34,17 @@ plugin = mkPageTransformM transformBlock
 transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classes = do
   cfg <- askConfig
-  let (name, outfile) =  case lookup "name" namevals of
-                                Just fn   -> ([Str fn], unpack fn ++ ".png")
-                                Nothing   -> ([], uniqueName contents' ++ ".png")
+  let prefix  = unpack $ fromMaybe "dot" $ lookup "name" namevals
       contents' = unpack contents
-  liftIO $ do
-    (ec, _out, err) <- readProcessWithExitCode "dot" ["-Tpng", "-o",
-                         cacheDir cfg </> "img" </> outfile] contents
-    let attr = ("image", [], [])
-    if ec == ExitSuccess
-       then return $ Para [Image attr name (pack $ "/img" </> outfile, "")]
-       else error $ "dot returned an error status: " ++ err
+      outfile = cacheDir cfg </> prefix ++ "-" ++ uniqueName contents' ++ ".svg"
+      dotargs = ["-Tsvg", "-o", outfile]
+  cached <- liftIO $ doesFileExist outfile
+  unless cached $ do
+    (ec, _out, err) <- liftIO $ readProcessWithExitCode "dot" dotargs contents'
+    -- TODO fix so it doesn't crash the wiki with an error!
+    unless (ec == ExitSuccess) $ error $ "dot returned an error status: " ++ err
+  svg <- liftIO $ readFile outfile
+  return $ RawBlock (Format "html") (pack svg)
 transformBlock x = return x
 
 -- | Generate a unique filename given the file's contents.
