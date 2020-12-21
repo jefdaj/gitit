@@ -1,4 +1,4 @@
-module Csv (plugin) where
+module Network.Gitit.Plugins.Csv (plugin) where
 
 -- TODO make 'file' paths relative to repository-path when absolute
 -- TODO and relative to repository-path/cleaned-up-uri if relpaths
@@ -9,6 +9,7 @@ import Data.Maybe
 import Network.Gitit.Interface
 import System.Directory
 import System.FilePath.Posix
+import Data.Text (pack, unpack)
 
 -- splits the raw csv into fields
 -- TODO use Data.CSV to replace this
@@ -17,7 +18,7 @@ fields s = map (splitOn ",") (lines s)
 
 -- wraps a string in a tablecell
 cell :: String -> TableCell
-cell s = [Plain [Str s]]
+cell s = [Plain [Str $ pack s]]
 
 align :: Int -> [Alignment]
 align n = replicate n AlignDefault
@@ -35,7 +36,7 @@ table c t = Table c a w h r
 
 -- extracts a caption from block attributes
 caption :: [(String, String)] -> [Inline]
-caption as = map Str $ maybeToList $ lookup "caption" as
+caption as = map (Str . pack) $ maybeToList $ lookup "caption" as
 
 uri2path :: String -> FilePath
 uri2path uri
@@ -83,8 +84,13 @@ plugin :: Plugin
 plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | "csv" `elem` cs && not (null txt) = do
-      cap <- return $ caption as
-      bod <- body as txt
-      return $ table cap bod
+    tfm (CodeBlock (_, cs, as) txt) | (pack "csv") `elem` cs =
+      let as'  = map (\(a, b) -> (unpack a, unpack b)) as
+          txt' = unpack txt
+      in if null txt' && isNothing (lookup "file" as')
+           then return $ table [] [] -- prevents crash on empty tables
+           else do
+             cap <- return $ caption as'
+             bod <- body as' txt'
+             return $ table cap bod
     tfm x = return x
