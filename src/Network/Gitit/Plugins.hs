@@ -26,6 +26,7 @@ import Network.Gitit.Types
 import System.FilePath (takeBaseName)
 import Control.Monad (unless)
 import System.Log.Logger (logM, Priority(..))
+import qualified Network.Gitit.Plugins.CiteLinks as CiteLinks
 import qualified Network.Gitit.Plugins.CiteProc as CiteProc
 import qualified Network.Gitit.Plugins.Dot as Dot
 import qualified Network.Gitit.Plugins.Files as Files
@@ -88,7 +89,7 @@ loadPlugin pluginName = do
 #endif
 
 compiledPlugins :: [Plugin]
-compiledPlugins = [ CiteProc.plugin, Dot.plugin, Files.plugin ]
+compiledPlugins = [ CiteLinks.plugin, CiteProc.plugin, Dot.plugin, Files.plugin ]
 
 loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
