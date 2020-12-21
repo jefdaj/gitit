@@ -5,7 +5,7 @@ My fork of [gitit](https://github.com/jgm/gitit), specialized for use as a lab n
 
 The master branch is messy and consists of the upstream gitit release (v0.13.0)
 + all my working feature branches. Stable versions are tagged. Here's a summary
-of the other feature branches, which are each rebased separate from upstream:
+of the other feature branches, which are each rebased separately from upstream:
 
 | feature          | status      | description                                            |
 |:-----------------|:------------|:-------------------------------------------------------|
