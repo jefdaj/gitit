@@ -139,6 +139,7 @@ Library
                      mtl,
                      old-time,
                      pandoc >= 2.9 && < 2.10,
+                     pandoc-citeproc,
                      pandoc-types >= 1.20 && < 1.21,
                      skylighting >= 0.8.2.3 && < 0.9,
                      bytestring,
