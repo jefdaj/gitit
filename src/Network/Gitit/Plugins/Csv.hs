@@ -31,7 +31,7 @@ table header c t = Table c a w h r
     w = [] -- relative widths
 
     -- TODO is this safe?
-    h = if header then head f else map cell $ replicate (length (head f) -1) ""
+    h = if header then head f else map cell $ replicate (length $ head f) ""
     r = if header then tail f else f
 
 -- extracts a caption from block attributes
