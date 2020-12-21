@@ -23,16 +23,16 @@ cell s = [Plain [Str $ pack s]]
 align :: Int -> [Alignment]
 align n = replicate n AlignDefault
 
-table :: [Inline] -> String -> Block
-table c t = Table c a w h r
+table :: Bool -> [Inline] -> String -> Block
+table header c t = Table c a w h r
   where
     f = map (map cell) $ fields t
     a = align $ length h
     w = [] -- relative widths
 
     -- TODO is this safe?
-    h = head f
-    r = tail f
+    h = if header then head f else map cell $ replicate (length (head f) -1) ""
+    r = if header then tail f else f
 
 -- extracts a caption from block attributes
 caption :: [(String, String)] -> [Inline]
@@ -73,6 +73,7 @@ link2path lnk = do
 body :: [(String, FilePath)] -> String -> PluginM String
 body as txt = case lookup "file" as of
   Nothing -> return txt
+  Just "" -> return txt
   Just f  -> do
     p <- link2path f
     e <- liftIO $ doesFileExist p
@@ -87,10 +88,11 @@ plugin = mkPageTransformM tfm
     tfm (CodeBlock (_, cs, as) txt) | (pack "csv") `elem` cs =
       let as'  = map (\(a, b) -> (unpack a, unpack b)) as
           txt' = unpack txt
+          hdr  = lookup "header" as' == Just "True"
       in if null txt' && isNothing (lookup "file" as')
-           then return $ table [] [] -- prevents crash on empty tables
+           then return $ table False [] [] -- prevents crash on empty tables
            else do
              cap <- return $ caption as'
              bod <- body as' txt'
-             return $ table cap bod
+             return $ table hdr cap bod
     tfm x = return x
