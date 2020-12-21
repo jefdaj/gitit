@@ -8,8 +8,10 @@ in
 , pkgs ? import nixpkgs { }
 }:
 let
-  inherit (pkgs.haskell.lib) markUnbroken dontCheck;
+  inherit (pkgs.haskell.lib) markUnbroken dontCheck overrideCabal;
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
+
+    # overrides of the whole haskell package set go here
     overrides = hpNew: hpOld: {
       niv = import sources.niv {};
       gitit = hpNew.callCabal2nix "gitit" ./. {};
@@ -29,12 +31,20 @@ let
       recaptcha        = hpNew.callHackage "recaptcha"        "0.1.0.4"   {};
 
       # added to satisfy cabal version bounds
-      hslua        = hpNew.callHackage "hslua"        "1.0.3.2"   {};
-      hoauth2        = hpNew.callHackage "hoauth2"        "1.11.0"   {};
+      hslua   = hpNew.callHackage "hslua"   "1.0.3.2" {};
+      hoauth2 = hpNew.callHackage "hoauth2" "1.11.0"  {};
 
     };
   };
-  project = haskellPackages.gitit;
+
+  # overrides for the auto-generated gitit package above go here
+  project = overrideCabal haskellPackages.gitit (old: {
+    executableSystemDepends = [
+      pkgs.graphviz
+      # TODO latex/pdflatex
+    ];
+  });
+
 in
 {
   project = project;
