@@ -24,7 +24,7 @@ module Network.Gitit.Plugins.RelatedFiles
  -}
 
 import Network.Gitit.Interface
-import Network.Gitit.Plugin.CiteUtils
+import Network.Gitit.Plugins.CiteUtils
 
 import Data.List       (isPrefixOf)
 import System.FilePath (addExtension, splitExtension)

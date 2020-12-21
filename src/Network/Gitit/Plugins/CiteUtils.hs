@@ -8,11 +8,11 @@ module Network.Gitit.Plugins.CiteUtils
   , listFiles
   , render
   , renderFiles
+  , askName
   )
   where
   -- ( blocksToString
   -- , setTitle
-  -- , askName
 
 import Network.Gitit.Interface
 import Text.Pandoc.Definition
