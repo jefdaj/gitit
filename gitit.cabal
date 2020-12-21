@@ -119,6 +119,7 @@ Library
                      Network.Gitit.Plugins,
                      Network.Gitit.Plugins.Dot,
                      Network.Gitit.Plugins.Files,
+                     Network.Gitit.Plugins.RelatedFiles,
                      Network.Gitit.Rpxnow,
                      Network.Gitit.Page, Network.Gitit.Feed,
                      Network.Gitit.Compat.Except,
