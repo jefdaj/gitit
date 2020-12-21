@@ -23,6 +23,7 @@ import Data.ByteString.Lazy.UTF8 (fromString)
 import Data.Digest.Pure.SHA (sha1, showDigest)
 import System.FilePath ((</>))
 import Data.Text (pack, unpack)
+import Control.Monad.Trans (liftIO)
 
 plugin :: Plugin
 plugin = mkPageTransformM transformBlock
@@ -36,7 +37,7 @@ transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classe
       contents' = unpack contents
   liftIO $ do
     (ec, _out, err) <- readProcessWithExitCode "dot" ["-Tpng", "-o",
-                         staticDir cfg </> "img" </> outfile] contents'
+                         cacheDir cfg </> "img" </> outfile] contents
     let attr = ("image", [], [])
     if ec == ExitSuccess
        then return $ Para [Image attr name (pack $ "/img" </> outfile, "")]
@@ -46,4 +47,3 @@ transformBlock x = return x
 -- | Generate a unique filename given the file's contents.
 uniqueName :: String -> String
 uniqueName = showDigest . sha1 . fromString
-
