@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.Gitit.Plugins.Files (plugin) where
 
 import Control.Exception (try, SomeException)
@@ -6,6 +8,7 @@ import Data.FileStore (Resource(FSFile, FSDirectory), directory)
 import Data.List (intercalate, isInfixOf, sort)
 import Data.Maybe (fromMaybe)
 import Network.Gitit.Interface
+import Data.Text (pack, unpack)
 
 
 -- This plugin allows you to include a list of files
@@ -41,18 +44,18 @@ transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, cs, as) txt) | "files" `elem` cs = do
   req <- askRequest
   let reqdir   = reqDir req
-      matchdir = fromMaybe reqdir    $ lookup "dir"  as
-      sortord  = fromMaybe "forward" $ lookup "sort" as
+      matchdir = fromMaybe reqdir    $ fmap unpack $ lookup "dir"  as
+      sortord  = fromMaybe "forward" $ fmap unpack $ lookup "sort" as
       prefix   = if null matchdir then "" else matchdir ++ "/"
   files <- listFiles matchdir
-  let html = case conditions (lines txt) of
+  let html = case conditions (lines $ unpack txt) of
               Left  s     -> s
               Right conds -> case order sortord of
                             Left  s -> s
                             Right o -> let matches = restrict conds files
                                            sorted  = ordered o matches
                                        in render prefix sorted
-  return $ RawBlock (Format "html") html
+  return $ RawBlock (Format "html") (pack html)
 transformBlock x = return x
 
 
@@ -91,8 +94,9 @@ resPath (FSDirectory d) = d
 reqDir :: Request -> FilePath
 reqDir = intercalate "/" . init . rqPaths
 
+-- TODO what is the new string arg ext for?
 render :: String -> [Resource] -> String
-render prefix rs = show $ fileListToHtmlNoUplink "" prefix rs
+render prefix rs = show $ fileListToHtmlNoUplink "" prefix "page" rs
 
 
 -----------------------------------
