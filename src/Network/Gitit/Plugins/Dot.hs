@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.Gitit.Plugins.Dot (plugin) where
 
 -- This plugin allows you to include a graphviz dot diagram
@@ -20,6 +22,7 @@ import Data.ByteString.Lazy.UTF8 (fromString)
 -- from the SHA package on HackageDB:
 import Data.Digest.Pure.SHA (sha1, showDigest)
 import System.FilePath ((</>))
+import Data.Text (pack, unpack)
 
 plugin :: Plugin
 plugin = mkPageTransformM transformBlock
@@ -28,14 +31,15 @@ transformBlock :: Block -> PluginM Block
 transformBlock (CodeBlock (_, classes, namevals) contents) | "dot" `elem` classes = do
   cfg <- askConfig
   let (name, outfile) =  case lookup "name" namevals of
-                                Just fn   -> ([Str fn], fn ++ ".png")
-                                Nothing   -> ([], uniqueName contents ++ ".png")
+                                Just fn   -> ([Str fn], unpack fn ++ ".png")
+                                Nothing   -> ([], uniqueName contents' ++ ".png")
+      contents' = unpack contents
   liftIO $ do
     (ec, _out, err) <- readProcessWithExitCode "dot" ["-Tpng", "-o",
-                         staticDir cfg </> "img" </> outfile] contents
+                         staticDir cfg </> "img" </> outfile] contents'
     let attr = ("image", [], [])
     if ec == ExitSuccess
-       then return $ Para [Image attr name ("/img" </> outfile, "")]
+       then return $ Para [Image attr name (pack $ "/img" </> outfile, "")]
        else error $ "dot returned an error status: " ++ err
 transformBlock x = return x
 
