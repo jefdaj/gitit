@@ -89,7 +89,12 @@ loadPlugin pluginName = do
 #endif
 
 compiledPlugins :: [Plugin]
-compiledPlugins = [ CiteLinks.plugin, CiteProc.plugin, Dot.plugin, Files.plugin ]
+compiledPlugins =
+  [ Dot.plugin
+  , Files.plugin
+  , CiteLinks.plugin
+  , CiteProc.plugin
+  ]
 
 loadPlugins :: [FilePath] -> IO [Plugin]
 loadPlugins pluginNames = do
