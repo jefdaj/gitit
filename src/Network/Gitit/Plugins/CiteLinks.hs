@@ -3,8 +3,8 @@
 module Network.Gitit.Plugins.CiteLinks
   where
 
--- TODO OK, something about the CiteProc plugin is messing this up :( find
--- and fix!
+-- TODO is it possible to make the link text (inline Str) be the title?
+-- TODO make url relative to a default dir?
 
 {- This plugin supports keeping notes in the style used by Caleb McDaniel
  - (http://wcm1.web.rice.edu/plain-text-citations.html). That is, you have
@@ -26,27 +26,21 @@ module Network.Gitit.Plugins.CiteLinks
 
 import Network.Gitit.Interface
 import Network.Gitit.Plugins.CiteUtils
-import Data.Text (head, tail, null, unpack)
+import Data.Text (head, tail, null, pack, unpack)
 import Prelude hiding (head, tail, null)
 
 plugin :: Plugin
 plugin = mkPageTransformM citeLinks
 
--- TODO rewrite to pick up already-processed citations from citeproc instead
--- TODO hmm what if it's just not counting the right things as pages,
---      like because of the new default extension argument?
 citeLinks :: Inline -> PluginM Inline
-citeLinks (Str s) | not (null s) && head s == '@' = do
-  let name = tail s
-      link = Link nullAttr [] (name, name)
-  page <- isPage     $ unpack name
-  this <- isThisPage $ unpack name
-  liftIO $ putStrLn $ "citelinks page: " ++ show page
-  liftIO $ putStrLn $ "citelinks this: " ++ show this
-  liftIO $ putStrLn $ "citelinks link: " ++ show link
+citeLinks x@(Cite (c:_) _) = do
+  let cid  = citationId c
+      link = Link nullAttr [Str cid] (cid, cid)
+  page <- isPage     $ unpack cid
+  this <- isThisPage $ unpack cid
+  -- liftIO $ putStrLn $ "citelinks cite: " ++ show c
+  -- liftIO $ putStrLn $ "citelinks link: " ++ show link
   if page && (not this)
     then return link
-    else return (Str s)
-citeLinks x = do
-  liftIO $ putStrLn $ "citelinks x: " ++ show x
-  return x
+    else return x
+citeLinks x = return x
