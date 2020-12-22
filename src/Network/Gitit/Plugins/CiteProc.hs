@@ -53,10 +53,10 @@ import Text.CSL.Pandoc       (processCites)
 import Text.CSL.Parser       (readCSLFile)
 import Text.CSL.Reference    (Reference, refId, title, unLiteral)
 import Text.CSL.Style        (Style, unFormatted)
-import Data.Text (pack)
+import Data.Text (Text, pack, unpack)
 
 blocksToString :: [Block] -> String
-blocksToString bs = unlines $ map (\(CodeBlock _ t) -> t) bs
+blocksToString bs = unlines $ map (\(CodeBlock _ t) -> unpack t) bs
 
 -- because Text.Pandoc.Builder.setTitle doesn't work on a [Inline]
 setTitle :: Pandoc -> [Inline] -> Pandoc
@@ -97,7 +97,7 @@ parseRefs blks = do
     , fmap readFile $ defaultBibliography   conf
     , fmap return   $ Just ""
     ]
-  bib <- liftIO $ readBibtexString True True txt
+  bib <- liftIO $ readBibtexString (const True) True True (pack txt)
   return bib
 
 getRefs :: Pandoc -> PluginM [Reference]
@@ -116,7 +116,7 @@ parseStyle = do
 keyAndTitle :: Reference -> (String, [Inline])
 keyAndTitle r = (unId r, unTitle r)
   where
-    unId    = unLiteral   . refId
+    unId    = unpack . unLiteral   . refId
     unTitle = unFormatted . title
 
 -- TODO have just getThisRef, and exract the title afterward?
