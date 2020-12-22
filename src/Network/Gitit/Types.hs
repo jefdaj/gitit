@@ -113,6 +113,10 @@ data Config = Config {
   repositoryType       :: FileStoreType,
   -- | Default page markup type for this wiki
   defaultPageType      :: PageType,
+  -- | Path to the citation style for use with pandoc-citeproc
+  citationStyle        :: FilePath,
+  -- | Path to the default bibliography for use with pandoc-citeproc
+  defaultBibliography  :: Maybe FilePath,
   -- | Default file extension for pages in this wiki
   defaultExtension     :: String,
   -- | How to handle LaTeX math in pages?
