@@ -54,8 +54,7 @@ initializeGititState :: Config -> IO ()
 initializeGititState conf = do
   let userFile' = userFile conf
       pluginModules' = pluginModules conf
-      plugindir = pluginDir conf
-  plugins' <- loadPlugins plugindir pluginModules'
+  plugins' <- loadPlugins (pluginDir conf) pluginModules'
 
   userFileExists <- doesFileExist userFile'
   users' <- if userFileExists

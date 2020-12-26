@@ -38,9 +38,10 @@ import Data.List (isInfixOf, isPrefixOf)
 import GHC
 import GHC.Paths
 import Unsafe.Coerce
+import System.FilePath ((</>))
 
-loadPlugin :: FilePath -> IO Plugin
-loadPlugin pluginName = do
+loadPlugin :: FilePath -> FilePath -> IO Plugin
+loadPlugin pluginDir pluginName = do
   logM "gitit" WARNING ("Loading plugin '" ++ pluginName ++ "'...")
   runGhc (Just libdir) $ do
     dflags <- getSessionDynFlags
@@ -49,7 +50,7 @@ loadPlugin pluginName = do
       -- initDynFlags
       unless ("Network.Gitit.Plugin." `isPrefixOf` pluginName)
         $ do
-            addTarget =<< guessTarget pluginName Nothing
+            addTarget =<< guessTarget (if "/" `isInfixOf` pluginName then pluginName else pluginDir </> pluginName) Nothing
             r <- load LoadAllTargets
             case r of
               Failed -> error $ "Error loading plugin: " ++ pluginName
@@ -83,8 +84,8 @@ loadPlugin pluginName = do
 
 #else
 
-loadPlugin :: FilePath -> IO Plugin
-loadPlugin pluginName = do
+loadPlugin :: FilePath -> FilePath -> IO Plugin
+loadPlugin pluginDir pluginName = do
   error $ "Cannot load plugin '" ++ pluginName ++
           "'. gitit was not compiled with plugin support."
   return undefined
@@ -102,8 +103,8 @@ compiledPlugins =
   , CiteProc.plugin
   ]
 
-loadPlugins :: [FilePath] -> IO [Plugin]
-loadPlugins pluginNames = do
-  plugins' <- mapM loadPlugin pluginNames
+loadPlugins :: FilePath -> [FilePath] -> IO [Plugin]
+loadPlugins pluginDir pluginNames = do
+  plugins' <- mapM (loadPlugin pluginDir) pluginNames
   unless (null pluginNames) $ logM "gitit" WARNING "Finished loading plugins."
   return $ compiledPlugins ++ plugins'
