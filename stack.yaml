@@ -1,5 +1,5 @@
 nix:
-  enable: false
+  enable: true
   packages: [zlib zlib.dev]
 
 flags:
@@ -20,6 +20,7 @@ extra-deps:
 - pandoc-2.9.2.1
 - pandoc-types-1.20
 - recaptcha-0.1.0.4
+- canonical-filepath-1.0.0.3@sha256:e0913e14080e52ccd25805996b333c19815d41ba138acaf86c1782ed92f8dcf3,833
 
 allow-newer: true
 resolver: lts-15.10
