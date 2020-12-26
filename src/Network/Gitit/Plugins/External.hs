@@ -1,4 +1,6 @@
-module Network.Gitit.Plugin.External
+{-# LANGUAGE OverloadedStrings #-}
+
+module Network.Gitit.Plugins.External
   ( plugin
   , mkPlugin
   , Plugin
@@ -17,6 +19,7 @@ import System.FilePath
 import System.FilePath.Canonical
 import System.Process
 import Paths_gitit (getDataFileName)
+import Data.Text (Text, pack, unpack)
 
 {- Passes text to an external script as stdin
  - and returns with the script's stdout
@@ -38,25 +41,27 @@ eval bin args txt = do
 
 {- Takes a format string and some text, and
  - wraps the text in the corresponding Pandoc Block
+ - TODO document that this interacts with the Csv plugin
  -}
 wrap :: String -> String -> Block
-wrap "html" txt = RawBlock (Format "html") txt
-wrap "csv"  txt = CodeBlock ("", ["csv"], []) txt
-wrap "list" txt = BulletList [map (\s -> Plain [Str s]) $ lines txt]
-wrap "para" txt = Para  [Str txt]
-wrap _      txt = Plain [Str txt]
+wrap "html" txt = RawBlock (Format "html") (pack txt)
+wrap "csv"  txt = CodeBlock ("", ["csv"], []) (pack txt)
+wrap "list" txt = BulletList [map (\s -> Plain [Str $ pack s]) $ lines txt]
+wrap "para" txt = Para  [Str $ pack txt]
+wrap _      txt = Plain [Str $ pack txt]
 
-mkFlags :: [String] -> [(String, [String])] -> [String]
+mkFlags :: [String] -> [(Text, [Text])] -> [String]
 mkFlags ask usr = concatMap flagify $ screen usr
   where
-    screen = filter (\(k,_) -> elem k ask)
-    flagify (k, vs) = ("--" ++ k):vs
+    screen = filter (\(k,_) -> elem k (map pack ask))
+    flagify (k, vs) = ("--" ++ unpack k):(map unpack vs)
 
 -- asks for the plugin data available from gitit and
 -- formats it as command line args for external scripts
 -- also takes a predicate for filtering which optional args to pass
 -- TODO clean this up and de-duplicate
-argList :: [String] -> [(String, String)] -> PluginM [String]
+-- TODO and take Text rather than String
+argList :: [String] -> [(Text, Text)] -> PluginM [String]
 argList ask usr = do
   c <- askConfig
   m <- askMeta
@@ -70,19 +75,20 @@ argList ask usr = do
   defaultStatic    <- liftIO $ getDataFileName $ "data" </> "static"
   defaultTemplates <- liftIO $ getDataFileName $ "data" </> "templates"
   let
-    sndSingletons = map (\(k,v) -> (k,[v]))
+    sndSingletons  = map (\(k,v) -> (k,[v]))
+    sndSingletons' = map (\(k,v) -> (pack k,[pack v])) -- TODO clean this up
     usrFlags  = sndSingletons usr
-    metaFlags = sndSingletons m
-    reqFlags  = [("uri", [rqUri r])]
+    metaFlags = sndSingletons' m
+    reqFlags  = [(pack "uri", [pack $ rqUri r])]
     cfgFlags  =
-      [ ("cache-dir"      , [canonicalFilePath configCache                      ])
-      , ("repository-path", [canonicalFilePath configRepository                 ])
-      , ("plugin-dir"     , [canonicalFilePath configPlugins  , defaultPlugins  ])
-      , ("static-dir"     , [canonicalFilePath configStatic   , defaultStatic   ])
-      , ("templates-dir"  , [canonicalFilePath configTemplates, defaultTemplates])
+      [ ("cache-dir"      , [pack $ canonicalFilePath configCache                           ])
+      , ("repository-path", [pack $ canonicalFilePath configRepository                      ])
+      , ("plugin-dir"     , [pack $ canonicalFilePath configPlugins  , pack defaultPlugins  ])
+      , ("static-dir"     , [pack $ canonicalFilePath configStatic   , pack defaultStatic   ])
+      , ("templates-dir"  , [pack $ canonicalFilePath configTemplates, pack defaultTemplates])
       ]
     askedArgs = concat [usrFlags, metaFlags, cfgFlags, reqFlags]
-    adhocArgs = [a | a <- ask ++ map fst usr, a `notElem` ["bin", "fmt", "nfo"]]
+    adhocArgs = [a | a <- ask ++ map (unpack . fst) usr, a `notElem` ["bin", "fmt", "ask"]]
     finalArgs = mkFlags adhocArgs askedArgs
   return finalArgs
 
@@ -129,12 +135,12 @@ plugin = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
     tfm (CodeBlock (_, cs, as) txt) | "external" `elem` cs = do
-      let bin = fromMaybe "" $ lookup "bin" as
-          fmt = fromMaybe "" $ lookup "fmt" as
-          nfo = fromMaybe "" $ lookup "nfo" as -- TODO rename nfo to ask?
-      args <- argList (words nfo) as
+      let bin = unpack $ fromMaybe "" $ lookup "bin" as
+          fmt = unpack $ fromMaybe "" $ lookup "fmt" as
+          ask = unpack $ fromMaybe "" $ lookup "ask" as -- TODO rename nfo to ask?
+      args <- argList (words ask) as
       bin' <- findBinary bin
-      out  <- liftIO $ eval bin' args txt
+      out  <- liftIO $ eval bin' args $ unpack txt
       return $ wrap fmt out
     tfm x = return x
 
@@ -171,10 +177,10 @@ mkPlugin :: String -> String -> FilePath -> [String] -> Plugin
 mkPlugin cls fmt bin ask = mkPageTransformM tfm
   where
     tfm :: Block -> PluginM Block
-    tfm (CodeBlock (_, cs, as) txt) | cls `elem` cs = do
+    tfm (CodeBlock (_, cs, as) txt) | (pack cls) `elem` cs = do
       args <- argList ask as
       name <- findBinary bin
-      out  <- liftIO $ eval name args txt
+      out  <- liftIO $ eval name args $ unpack txt
       return $ wrap fmt out
     tfm x = return x
 

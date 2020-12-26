@@ -30,6 +30,7 @@ import qualified Network.Gitit.Plugins.Csv as Csv
 import qualified Network.Gitit.Plugins.CiteLinks as CiteLinks
 import qualified Network.Gitit.Plugins.CiteProc as CiteProc
 import qualified Network.Gitit.Plugins.Dot as Dot
+import qualified Network.Gitit.Plugins.External as External
 import qualified Network.Gitit.Plugins.Files as Files
 import qualified Network.Gitit.Plugins.RelatedFiles as RelatedFiles
 #ifdef _PLUGINS
@@ -94,6 +95,7 @@ compiledPlugins :: [Plugin]
 compiledPlugins =
   [ Csv.plugin
   , Dot.plugin
+  , External.plugin
   , Files.plugin
   , RelatedFiles.plugin
   , CiteLinks.plugin

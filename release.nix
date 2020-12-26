@@ -8,7 +8,7 @@ in
 , pkgs ? import nixpkgs { }
 }:
 let
-  inherit (pkgs.haskell.lib) markUnbroken dontCheck overrideCabal;
+  inherit (pkgs.haskell.lib) markUnbroken dontCheck overrideCabal doJailbreak;
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
 
     # overrides of the whole haskell package set go here
@@ -29,6 +29,9 @@ let
       pandoc           = dontCheck (hpNew.callHackage "pandoc" "2.9.2.1"  {}); # TODO what's wrong here?
       pandoc-types     = hpNew.callHackage "pandoc-types"     "1.20"      {};
       recaptcha        = hpNew.callHackage "recaptcha"        "0.1.0.4"   {};
+
+      # for canonical-filepath
+      canonical-filepath = doJailbreak (markUnbroken hpOld.canonical-filepath);
 
       # added to satisfy cabal version bounds
       hslua   = hpNew.callHackage "hslua"   "1.0.3.2" {};
