@@ -1,7 +1,7 @@
 module BashExample (plugin) where
 
-import Network.Gitit.Interface       (Plugin)
-import Network.Gitit.Plugin.External (mkPlugin, allArgs)
+import Network.Gitit.Interface        (Plugin)
+import Network.Gitit.Plugins.External (mkPlugin, allArgs)
 
 plugin :: Plugin
 plugin = mkPlugin
